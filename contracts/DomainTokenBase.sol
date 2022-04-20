@@ -93,7 +93,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase {
         address,
         address to,
         uint256 tokenId
-    ) internal override {
+    ) internal view override {
          if(to != address(0)){
              require(domains[tokenId].canTransfer(), "Can not transfer");
          }
@@ -151,7 +151,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase {
          return domains[tokenId];
      }
 
-     function getTokenIdByName(string memory domainName) override external view returns(uint256) {
+     function getTokenIdByName(string memory domainName) override external pure returns(uint256) {
          return Domains.domainNameToId(domainName);
      }
      

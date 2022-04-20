@@ -10,6 +10,10 @@ library Domain {
         uint256 withdrawInitiated;
     }
 
+    function domainNameToId(string memory domainname) internal pure returns(uint256){
+        return uint256(keccak256(abi.encode(domainName)));
+    }
+    
     function domainHash(Domain memory domain) internal pure returns(bytes32) {
         return keccak256(abi.encode(domain.name));
     }

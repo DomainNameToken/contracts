@@ -5,30 +5,37 @@ import { CustodianLib } from "./libraries/Custodian.sol";
 contract Custodian is ICustodian, Destroyable {
     using CustodianLib for CustodianLib.Custodian;         
     CustodianLib.Custodian public custodian;
-    constructor(){
-        
-    }
     
-    function setCustodian(string memory name, baseUrl) external onlyOwner {
-        custodian = CustodianLib.Custodian({
-            name: name,
-                    baseUrl: baseUrl
-                    });
+    constructor(){
+        custodian = CustodianLib({});
     }
-    function addOperator(address operator) external onlyOwner {
+
+    function setCustodianInfo(string memory name, string memory baseUrl) external override onlyOwner {
+        custodian.setName(name);
+        custodian.setBaseUrl(baseUrl);
+    }
+    function name() external override view returns(string memory) {
+        return custodian.name;
+    }
+    function baseUrl() external override view returns(string memory) {
+        return custodian.baseUrl;
+    }
+    function addOperator(address operator) override external onlyOwner {
         custodian.addOperator(operator);
+        emit OperatorAdded(operator);
     }
-    function removeOperator(address operator) external onlyOwner {
+    function removeOperator(address operator) override external onlyOwner {
         custodian.removeOperator(operator);
+        emit OperatorRemoved(operator);
     }
-    function getOperators() external view returns(address[] memory) {
+    function getOperators() override external view returns(address[] memory) {
         return custodian.getOperators();
     }
-    function isOperator(address operator) external view returns(bool) {
+    function isOperator(address operator) override external view returns(bool) {
         return custodian.hasOperator(operator);
     }
     
-    function checkSignature(bytes32 messageHash, bytes memory signature) external view returns(bool) {
+    function checkSignature(bytes32 messageHash, bytes memory signature) override external view returns(bool) {
         return custodian.checkSignature(messageHash, signature);
     }
 
@@ -39,20 +46,23 @@ contract Custodian is ICustodian, Destroyable {
         _;
     }
 
-    function activateUser(address user) external onlyOperator {
-
+    function activateUser(address user) override external onlyOperator {
+        custodian.activateUser(user);
+        emit UserActivated(user);
     }
 
-    function deactivateUser(address user) external onlyOperator {
-
+    function deactivateUser(address user) override external onlyOperator {
+        custodian.deactivateUser(user);
+        emit UserDeactivated(user);
     }
 
-    function isActiveUser(address user) external view returns(bool) {
-        
+    function isActiveUser(address user) override external view returns(bool) {
+        return custodian.isActiveUser(user);
     }
     
-    function registerUser(address user) external onlyOperator {
-        
+    function registerUser(address user) override external onlyOperator {
+        custodian.registerUser(user);
+        emit UserRegistered(user);
     }
     
 }

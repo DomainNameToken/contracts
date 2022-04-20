@@ -4,54 +4,47 @@ pragma solidity ^0.8.0;
 import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 import { MintInformation } from './libraries/MintInformation.sol';
-import { CustodianLib } from './libraries/Custodian.sol';
+
 import { Domain } from './libraries/Domain.sol';
 import { Destroyable } from "./Destroyable.sol";
 
-contract DomainTokenBase is ERC721Enumerable, Destroyable {
+import { ICustodian } from './interfaces/ICustodian.sol';
+import { IDomainTokenBase } from './interfaces/IDomainTokenBase.sol';
+
+contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase {
 
     using MintInformation for MintInformation.MintInformation;
     using CustodianLib for CustodianLib.Custodian;
     using Domain for Domain.Domain;
     
-    CustodianLib.Custodian public custodian;
-    mapping(address=>uint256) public custodianDelegatesIndex;
-    address[] public custodianDelegates;
+    ICustodian public custodian;
     
     mapping(uint256=>uint256) public _nonces;
 
     mapping(uint256=>Domain.Domain) public domains;
-
     
-     modifier onlyOwnerOrCustodian() {
-         return owner() == msg.sender
-             || msg.sender == custodian.identity
-         _;
-     }
-
-    
-    constructor(Custodian memory _custodian) ERC721Enumerable("Domains", "DOMAIN"){
-        custodian = _custodian;
+    constructor(address custodian) ERC721Enumerable("Domains", "DOMAIN"){
+        custodian = ICustodian(_custodian);
     }
     
     function _baseURI() override internal returns(string memory) {
-        return custodian.baseUrl;
+        return custodian.baseUrl();
     }
 
     function name() override external view returns(string memory){
-        return string(abi.encodePacked(custodian.name, " ",_name));
+        return string(abi.encodePacked(custodian.name(), " ",_name));
     }
     
-    function setCustodian(Custodian.Custodian memory _custodian) external onlyOwnerOrCustodian {
-        custodian = _custodian;
+    function setCustodian(address _custodian) override external onlyOwner {
+        custodian = ICustodian(_custodian);
     }
 
     
-    function _isValidCustodianNonce(uint256 tokenId, uint256 nonce) internal view returns(bool) {
+    function _isValidNonce(uint256 tokenId, uint256 nonce) internal view returns(bool) {
         return _nonces[tokenId] < nonce;
     }
 
-    function _updateCustodianNonce(MintInformation.MintInformation memory info) internal {
+    function _updateNonce(MintInformation.MintInformation memory info) internal {
         _nonces[info.tokenId] = info.nonce;
     }
 
@@ -71,7 +64,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable {
 
         require(info.isValidInfo());
         
-        require(_isValidCustodianNonce(info.tokenId, info.nonce));
+        require(_isValidNonce(info.tokenId, info.nonce));
         
         require(info.isValidBlock());
 
@@ -79,6 +72,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable {
 
 
         Domain.Domain memory domain = Domain({
+                
             name: info.domainName,
                     expiryTime: info.expiryTime,
                     lockTime: block.timestamp,
@@ -88,7 +82,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable {
 
             domains[info.tokenId] = domain;
             
-        _updateCustodianNonce(info);
+        _updateNonce(info);
 
         _mint(info.destinationOwner, info.tokenId);
     }
@@ -103,7 +97,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable {
          }
      }
 
-     function setLock(uint256 tokenId, bool status) external {
+     function setLock(uint256 tokenId, bool status) override external {
          require(_exists(tokenId));
          require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
          if(status){
@@ -114,34 +108,35 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable {
      }
      
      modifier onlyOperator(){
-         require(msg.sender == owner()
-                 || msg.sender == custodian.identity
+         require( msg.sender == address(custodian)
+                 || msg.sender == custodian.owner()
                  || custodian.hasOperator(msg.sender), "Not operator");
-         _; 
+         _;
      }
-     function setCustodianLock(uint256 tokenId, bool status) external  onlyOperator {
+     function setCustodianLock(uint256 tokenId, bool status) override external  onlyOperator {
          domains[tokenId].setCustodianLock(status);
          emit CustodianLock(tokenId, domains[tokenId].custodianLock);
      }
      
      
-     function requestWithdraw(uint256 tokenId) external {
+     function requestWithdraw(uint256 tokenId) override external {
          require(_exists(tokenId), "token does not exist");
          require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
-         require(custodian.isActiveUser(msg.sender), "not active user");
          require(domains[tokenId].isNotLocked(), "domain locked");
+         require(custodian.isActiveUser(msg.sender), "not active user");
+
          domains[tokenId].setWithdraw(true);
          emit WithdrawRequest(tokenId, msg.sender);
      }
 
-     function cancelWithdrawRequest(uint256 tokenId) external onlyOperator {
+     function cancelWithdrawRequest(uint256 tokenId) override external onlyOperator {
          
          require(_exists(tokenId), "token does not exist");
          domains[tokenId].setWithdraw(false);
          
      }
 
-     function fulfillWithdraw(uint256 tokenId) external onlyOperator {
+     function fulfillWithdraw(uint256 tokenId) override external onlyOperator {
          require(!domains[tokenId].isNotWithdrawing());
          emit WithdrawFulfilled(tokenId, domains[tokenId].name);
          delete domains[tokenId];
@@ -149,6 +144,12 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable {
 
      }
 
-    
+     function getDomainInfo(uint256 tokenId) override external view returns(Domain.Domain memory) {
+         return domains[tokenId];
+     }
+
+     function getTokenIdByName(string memory domainName) override external view returns(uint256) {
+         return Domain.domainNameToId(domainName);
+     }
      
 }

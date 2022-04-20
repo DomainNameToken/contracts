@@ -8,10 +8,12 @@ interface ICustodian {
     event UserDeactivated(address indexed user);
     event OperatorAdded(address indexed operator);
     event OperatorRemoved(address indexed operator);
+
+    function getOwner() external view returns(address);
     
-    function setCustodianInfo(string memory name, string memory baseUrl) external;
-    function name() external view;
-    function baseUrl() external view;
+    function setCustodianInfo(string memory, string memory) external;
+    function name() external view returns(string memory);
+    function baseUrl() external view returns(string memory);
     function addOperator(address) external;
     function removeOperator(address) external;
     function getOperators() external returns(address[] memory);

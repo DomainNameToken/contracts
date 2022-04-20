@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-library Domain {
+library Domains {
     struct Domain {
         string name;
         uint256 expiryTime;
@@ -10,7 +10,7 @@ library Domain {
         uint256 withdrawInitiated;
     }
 
-    function domainNameToId(string memory domainname) internal pure returns(uint256){
+    function domainNameToId(string memory domainName) internal pure returns(uint256){
         return uint256(keccak256(abi.encode(domainName)));
     }
     

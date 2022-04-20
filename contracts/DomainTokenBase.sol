@@ -3,36 +3,38 @@ pragma solidity ^0.8.0;
 
 import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
-import { MintInformation } from './libraries/MintInformation.sol';
+import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-import { Domain } from './libraries/Domain.sol';
+import { MintInformations } from './libraries/MintInformation.sol';
+
+import { Domains } from './libraries/Domain.sol';
 import { Destroyable } from "./Destroyable.sol";
-
 import { ICustodian } from './interfaces/ICustodian.sol';
 import { IDomainTokenBase } from './interfaces/IDomainTokenBase.sol';
 
+
+
 contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase {
 
-    using MintInformation for MintInformation.MintInformation;
-    using CustodianLib for CustodianLib.Custodian;
-    using Domain for Domain.Domain;
+    using MintInformations for MintInformations.MintInformation;
+    using Domains for Domains.Domain;
     
     ICustodian public custodian;
     
     mapping(uint256=>uint256) public _nonces;
 
-    mapping(uint256=>Domain.Domain) public domains;
+    mapping(uint256=>Domains.Domain) public domains;
     
-    constructor(address custodian) ERC721Enumerable("Domains", "DOMAIN"){
+    constructor(address _custodian) ERC721("Domains", "DOMAIN"){
         custodian = ICustodian(_custodian);
     }
     
-    function _baseURI() override internal returns(string memory) {
+    function _baseURI() override internal view returns(string memory) {
         return custodian.baseUrl();
     }
 
-    function name() override external view returns(string memory){
-        return string(abi.encodePacked(custodian.name(), " ",_name));
+    function name() override public view returns(string memory){
+        return string(abi.encodePacked(custodian.name(), " ",super.name()));
     }
     
     function setCustodian(address _custodian) override external onlyOwner {
@@ -44,22 +46,21 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase {
         return _nonces[tokenId] < nonce;
     }
 
-    function _updateNonce(MintInformation.MintInformation memory info) internal {
+    function _updateNonce(MintInformations.MintInformation memory info) internal {
         _nonces[info.tokenId] = info.nonce;
     }
 
-    function _isValidTokenId(MintInformation.MintInformation memory info) internal pure returns(bool){
+    function _isValidTokenId(MintInformations.MintInformation memory info) internal pure returns(bool){
         return uint256(keccak256(abi.encode(info.domainName))) == info.tokenId;
     }
     function getTokenNonce(uint256 tokenId) external view returns(uint256){
-        return _nonces[info.tokenId];
+        return _nonces[tokenId];
     }
     
-    function mint(MintInformation.MintInformation memory info, bytes memory signature) returns(uint256){
+    function mint(MintInformations.MintInformation memory info, bytes memory signature) external returns(uint256){
         require(custodian
                 .checkSignature(info.encode(),
                                 signature));
-        require(custodian.identity == info.custodianIdentity);
         require(!_exists(info.tokenId));
 
         require(info.isValidInfo());
@@ -71,24 +72,25 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase {
         require(_isValidTokenId(info));
 
 
-        Domain.Domain memory domain = Domain({
+        Domains.Domain memory domain = Domains.Domain({
                 
             name: info.domainName,
                     expiryTime: info.expiryTime,
                     lockTime: block.timestamp,
                     custodianLock: 0,
-                    withdrawInitiated: 0,
-            })
+                    withdrawInitiated: 0
+                    });
 
             domains[info.tokenId] = domain;
             
         _updateNonce(info);
 
         _mint(info.destinationOwner, info.tokenId);
+        return info.tokenId;
     }
 
      function _beforeTokenTransfer(
-        address from,
+        address,
         address to,
         uint256 tokenId
     ) internal override {
@@ -100,25 +102,26 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase {
      function setLock(uint256 tokenId, bool status) override external {
          require(_exists(tokenId));
          require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
-         if(status){
-             domains[tokenId].lock();
-         } else {
-             domains[tokenId].unlock();
-         }
+         
+         domains[tokenId].setLock(status);
+         
      }
      
      modifier onlyOperator(){
          require( msg.sender == address(custodian)
-                 || msg.sender == custodian.owner()
-                 || custodian.hasOperator(msg.sender), "Not operator");
+                 || msg.sender == custodian.getOwner()
+                 || custodian.isOperator(msg.sender), "Not operator");
          _;
      }
+
      function setCustodianLock(uint256 tokenId, bool status) override external  onlyOperator {
          domains[tokenId].setCustodianLock(status);
          emit CustodianLock(tokenId, domains[tokenId].custodianLock);
      }
      
-     
+     event CustodianLock(uint256 tokenId, uint256 timestamp);
+     event WithdrawRequest(uint256 tokenId, address sender);
+     event WithdrawFulfilled(uint256 tokenId, string domainName);
      function requestWithdraw(uint256 tokenId) override external {
          require(_exists(tokenId), "token does not exist");
          require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
@@ -144,12 +147,12 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase {
 
      }
 
-     function getDomainInfo(uint256 tokenId) override external view returns(Domain.Domain memory) {
+     function getDomainInfo(uint256 tokenId) override external view returns(Domains.Domain memory) {
          return domains[tokenId];
      }
 
      function getTokenIdByName(string memory domainName) override external view returns(uint256) {
-         return Domain.domainNameToId(domainName);
+         return Domains.domainNameToId(domainName);
      }
      
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-library MintInformation {
+library MintInformations {
     struct MintInformation {
         uint256 tokenId;
         uint256 destinationChainId;               
@@ -13,9 +13,9 @@ library MintInformation {
         uint256 expiryTime;
     }
     
-    function encode(MintInformation memory info) internal returns(bytes32) {
+    function encode(MintInformation memory info) internal pure returns(bytes32) {
          return keccak256(abi
-                          .encodePacked(info.custodianIdentity,
+                          .encodePacked(
                                         info.tokenId,
                                         info.destinationChainId,
                                         info.destinationOwner,
@@ -26,15 +26,15 @@ library MintInformation {
                                         info.expiryTime));
     }
 
-    function isValidInfo(MintInformation memory info) internal returns(bool) {
+    function isValidInfo(MintInformation memory info) internal view returns(bool) {
         return info.tokenId == uint256(keccak256(abi.encode(info.domainName)))
             && info.expiryTime > block.timestamp
             && info.destinationOwner != address(0);
     }
     
     
-    function isValidBlock(MintInformation.MintInformation memory info) internal view returns(bool) {
-        return (block.chainid == info.destinationChainId
+    function isValidBlock(MintInformation memory info) internal view returns(bool) {
+        return block.chainid == info.destinationChainId
                 && block.number >= info.destinationBlock
                 && block.number <= info.destinationBlock + info.destinationBlockTTL;
     }

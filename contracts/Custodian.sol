@@ -1,19 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import { CustodianLib } from "./libraries/Custodian.sol";
-
+import { ICustodian } from "./interfaces/ICustodian.sol";
+import { Destroyable } from "./Destroyable.sol";
 contract Custodian is ICustodian, Destroyable {
     using CustodianLib for CustodianLib.Custodian;         
-    CustodianLib.Custodian public custodian;
+    CustodianLib.Custodian private custodian;
     
     constructor(){
-        custodian = CustodianLib({});
+        
     }
 
-    function setCustodianInfo(string memory name, string memory baseUrl) external override onlyOwner {
-        custodian.setName(name);
-        custodian.setBaseUrl(baseUrl);
+    function setCustodianInfo(string memory _name, string memory _baseUrl) external override onlyOwner {
+        custodian.setName(_name);
+        custodian.setBaseUrl(_baseUrl);
     }
+
+    function getOwner() external override view returns(address) {
+        return owner();
+    }
+    
     function name() external override view returns(string memory) {
         return custodian.name;
     }

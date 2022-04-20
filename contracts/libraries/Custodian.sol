@@ -19,12 +19,12 @@ library CustodianLib {
     function setBaseUrl(Custodian storage custodian, string memory baseUrl) internal {
         custodian.baseUrl = baseUrl;
     }
-    function checkSignature(Custodian memory custodian, bytes32 messageHash, bytes memory signature) internal pure returns(bool){
+    function checkSignature(Custodian storage custodian, bytes32 messageHash, bytes memory signature) internal view returns(bool){
         address signer = messageHash.toEthSignedMessageHash().recover(signature);
         return custodian.operators
             .contains(uint256(uint160(address(signer))));
     }
-    function hasOperator(Custodian memory custodian, address operator) internal view returns(bool){
+    function hasOperator(Custodian storage custodian, address operator) internal view returns(bool){
         return custodian.operators.contains(uint256(uint160(address(operator))));
     }
     function addOperator(Custodian storage custodian, address operator) internal {
@@ -34,13 +34,13 @@ library CustodianLib {
         custodian.operators
             .remove(uint256(uint160(address(operator))));
     }
-    function getOperators(Custodian memory custodian) internal view returns(address[] memory){
+    function getOperators(Custodian storage custodian) internal view returns(address[] memory){
         uint256 numberOfOperators = custodian.operators.length();
         address[] memory addresses = new address[](numberOfOperators);
 
         
         for(uint256 i = 0; i < numberOfOperators; i++){
-            addresses[i] = custodian.operators.at(i);
+            (,addresses[i]) = custodian.operators.at(i);
         }
         return addresses;
     }
@@ -55,7 +55,7 @@ library CustodianLib {
     function deactivateUser(Custodian storage custodian, address user) internal {
         custodian.activeUsers.remove(uint256(uint160(user)));
     }
-    function isActiveUser(Custodian memory custodian, address user) internal view returns(bool){
+    function isActiveUser(Custodian storage custodian, address user) internal view returns(bool){
         return custodian.activeUsers.contains(uint256(uint160(user)));
     }
 }

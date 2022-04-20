@@ -4,17 +4,17 @@ pragma solidity ^0.8.0;
 import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 import { MintInformation } from './libraries/MintInformation.sol';
-import { Custodian } from './libraries/Custodian.sol';
+import { CustodianLib } from './libraries/Custodian.sol';
 import { Domain } from './libraries/Domain.sol';
 import { Destroyable } from "./Destroyable.sol";
 
 contract DomainTokenBase is ERC721Enumerable, Destroyable {
 
     using MintInformation for MintInformation.MintInformation;
-    using Custodian for Custodian.Custodian;
+    using CustodianLib for CustodianLib.Custodian;
     using Domain for Domain.Domain;
     
-    Custodian.Custodian public custodian;
+    CustodianLib.Custodian public custodian;
     mapping(address=>uint256) public custodianDelegatesIndex;
     address[] public custodianDelegates;
     
@@ -46,15 +46,6 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable {
         custodian = _custodian;
     }
 
-    function addOpperator(address opperator) external onlyOwnerOrCustodian {
-        custodian.addOpperator(operator);
-    }
-    function removeOpperator(address opperator) external onlyOwnerOrCustodian {
-        custodian.removeOpperator(opperator);
-    }
-    function getOpperators() external view returns(address[] memory) {
-        return custodian.getOpperators();
-    }
     
     function _isValidCustodianNonce(uint256 tokenId, uint256 nonce) internal view returns(bool) {
         return _nonces[tokenId] < nonce;
@@ -122,14 +113,13 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable {
          }
      }
      
-     modifier onlyOpperator(){
+     modifier onlyOperator(){
          require(msg.sender == owner()
                  || msg.sender == custodian.identity
-                 || custodian.hasOpperator(msg.sender), "Not opperator");
-         _;
-                 
+                 || custodian.hasOperator(msg.sender), "Not operator");
+         _; 
      }
-     function setCustodianLock(uint256 tokenId, bool status) external  onlyOpperator {
+     function setCustodianLock(uint256 tokenId, bool status) external  onlyOperator {
          domains[tokenId].setCustodianLock(status);
          emit CustodianLock(tokenId, domains[tokenId].custodianLock);
      }
@@ -144,14 +134,14 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable {
          emit WithdrawRequest(tokenId, msg.sender);
      }
 
-     function cancelWithdrawRequest(uint256 tokenId) external onlyOpperator {
+     function cancelWithdrawRequest(uint256 tokenId) external onlyOperator {
          
          require(_exists(tokenId), "token does not exist");
          domains[tokenId].setWithdraw(false);
          
      }
 
-     function fulfillWithdraw(uint256 tokenId) external onlyOpperator {
+     function fulfillWithdraw(uint256 tokenId) external onlyOperator {
          require(!domains[tokenId].isNotWithdrawing());
          emit WithdrawFulfilled(tokenId, domains[tokenId].name);
          delete domains[tokenId];

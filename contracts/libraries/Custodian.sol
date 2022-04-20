@@ -3,38 +3,38 @@ pragma solidity ^0.8.0;
 import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
-library Custodian {
+library CustodianLib {
     using ECDSA for bytes32;
     using EnumerableMap for EnumerableMap.UintToAddressMap;
     struct Custodian {
         address identity;
         string name;
         string baseUrl;
-        EnumerableMap.UintToAddressMap opperators;
+        EnumerableMap.UintToAddressMap operators;
     }
     function checkSignature(Custodian memory custodian, bytes32 messageHash, bytes memory signature) internal pure returns(bool){
         address signer = messageHash.toEthSignedMessageHash().recover(signature);
         return custodian.identity == signer
-            || custodian.opperators
+            || custodian.operators
             .contains(uint256(uint160(address(signer))));
     }
-    function hasOpperator(Custodian memory custodian, address opperator) internal view returns(bool){
-        return custodian.opperators.contains(uint256(uint160(address(opperator))));
+    function hasOperator(Custodian memory custodian, address operator) internal view returns(bool){
+        return custodian.operators.contains(uint256(uint160(address(operator))));
     }
-    function addOpperator(Custodian storage custodian, address opperator) internal {
-        custodian.opperators.set(uint256(uint160(address(opperator))), opperator);
+    function addOperator(Custodian storage custodian, address operator) internal {
+        custodian.operators.set(uint256(uint160(address(operator))), operator);
     }
-    function removeOpperator(Custodian storage custodian, address opperator) internal {
-        custodian.opperators
-            .remove(uint256(uint160(address(opperator))));
+    function removeOperator(Custodian storage custodian, address operator) internal {
+        custodian.operators
+            .remove(uint256(uint160(address(operator))));
     }
-    function getOpperators(Custodian memory custodian) internal view returns(address[] memory){
-        uint256 numberOfOpperators = custodian.opperators.length();
-        address[] memory addresses = new address[](numberOfOpperators);
+    function getOperators(Custodian memory custodian) internal view returns(address[] memory){
+        uint256 numberOfOperators = custodian.operators.length();
+        address[] memory addresses = new address[](numberOfOperators);
 
         
-        for(uint256 i = 0; i < numberOfOpperators; i++){
-            addresses[i] = custodian.opperators.at(i);
+        for(uint256 i = 0; i < numberOfOperators; i++){
+            addresses[i] = custodian.operators.at(i);
         }
         return addresses;
     }

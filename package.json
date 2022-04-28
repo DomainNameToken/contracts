@@ -1,0 +1,41 @@
+{
+  "name": "@DomainNameToken/contracts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "deploy-v1": "node ./scripts/deploy-v1.js",
+    "ganache": "node ./scripts/start-ganache.js",
+    "test": "./node_modules/hardhat/internal/cli/cli.js test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DomainNameToken/contracts.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DomainNameToken/contracts/issues"
+  },
+  "homepage": "https://github.com/DomainNameToken/contracts#readme",
+  "devDependencies": {
+    "@nomiclabs/hardhat-waffle": "2.0.3",
+    "chai": "4.3.6",
+    "eslint": "^8.13.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "ethereum-waffle": "3.4.4",
+    "ganache-cli": "^6.12.2"
+  },
+  "dependencies": {
+    "@ethersproject/experimental": "^5.6.0",
+    "@nomiclabs/hardhat-ethers": "^2.0.5",
+    "@nomiclabs/hardhat-etherscan": "^3.0.3",
+    "@openzeppelin/contracts": "^4.5.0",
+    "convict": "^6.2.2",
+    "dotenv": "^16.0.0",
+    "ethers": "^5.6.4",
+    "hardhat": "^2.9.3",
+    "solc": "^0.8.13"
+  }
+}

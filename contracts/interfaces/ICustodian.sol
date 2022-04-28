@@ -23,4 +23,5 @@ interface ICustodian {
     function deactivateUser(address) external;
     function isActiveUser(address) external view returns(bool);
     function registerUser(address) external;
+    function isRegisteredUser(address) external view returns(bool);
 }

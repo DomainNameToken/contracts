@@ -48,6 +48,11 @@ library CustodianLib {
     function registerUser(Custodian storage custodian, address user) internal {
         custodian.registeredUsers.set(uint256(uint160(user)), user);
     }
+
+    function isRegisteredUser(Custodian storage custodian, address user) internal view returns(bool){
+        return custodian.registeredUsers.contains(uint256(uint160(user)));
+    }
+    
     function activateUser(Custodian storage custodian, address user) internal {
         custodian.activeUsers.set(uint256(uint160(user)), user);
         

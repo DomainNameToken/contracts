@@ -3,7 +3,9 @@ pragma solidity ^0.8.0;
 import { CustodianLib } from "./libraries/Custodian.sol";
 import { ICustodian } from "./interfaces/ICustodian.sol";
 import { Destroyable } from "./Destroyable.sol";
-contract Custodian is ICustodian, Destroyable {
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+
+contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
     using CustodianLib for CustodianLib.Custodian;         
     CustodianLib.Custodian private custodian;
     
@@ -11,6 +13,11 @@ contract Custodian is ICustodian, Destroyable {
         
     }
 
+    function initialize(string memory _name, string memory _baseUrl) public initializer {
+        custodian.setName(_name);
+        custodian.setBaseUrl(_baseUrl);
+    }
+    
     function setCustodianInfo(string memory _name, string memory _baseUrl) external override onlyOwner {
         custodian.setName(_name);
         custodian.setBaseUrl(_baseUrl);
@@ -53,6 +60,7 @@ contract Custodian is ICustodian, Destroyable {
     }
 
     function activateUser(address user) override external onlyOperator {
+        require(custodian.isRegisteredUser(user), "Not Registered");
         custodian.activateUser(user);
         emit UserActivated(user);
     }
@@ -69,6 +77,10 @@ contract Custodian is ICustodian, Destroyable {
     function registerUser(address user) override external onlyOperator {
         custodian.registerUser(user);
         emit UserRegistered(user);
+    }
+
+    function isRegisteredUser(address user) override external view returns(bool) {
+        return custodian.isRegisteredUser(user);
     }
     
 }

@@ -25,7 +25,7 @@ library Domains {
         return domain.lockTime == 0;
     }
     function isNotExpired(Domain memory domain) internal view returns (bool) {
-        return domain.expiryTime < block.timestamp;
+        return domain.expiryTime > block.timestamp;
     }
 
     function isNotCustodianLocked(Domain memory domain) internal pure returns(bool) {
@@ -51,7 +51,6 @@ library Domains {
             domain.lockTime = 0;
         }
     }
-
     function setWithdraw(Domain storage domain, bool status) internal {
         if(status){
             domain.withdrawInitiated = block.timestamp;

@@ -8,6 +8,8 @@ import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 import { MintInformations } from './libraries/MintInformation.sol';
 import { BurnInformations } from './libraries/BurnInformation.sol';
+import { ExtensionInformations } from './libraries/ExtensionInformation.sol';
+
 import { Domains } from './libraries/Domain.sol';
 import { Destroyable } from "./Destroyable.sol";
 import { ICustodian } from './interfaces/ICustodian.sol';
@@ -19,6 +21,8 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
 
     using MintInformations for MintInformations.MintInformation;
     using BurnInformations for BurnInformations.BurnInformation;
+    using ExtensionInformations for ExtensionInformations.ExtensionInformation;
+    
     using Domains for Domains.Domain;
     
     ICustodian public custodian;
@@ -63,8 +67,9 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
         return _nonces[tokenId] < nonce;
     }
 
-    function _updateNonce(MintInformations.MintInformation memory info) internal {
-        _nonces[info.tokenId] = info.nonce;
+    function _updateNonce(uint256 tokenId, uint256 nonce) internal {
+        require(nonce > _nonces[tokenId], "invalid nonce");
+        _nonces[tokenId] = nonce;
     }
 
     function _isValidTokenId(MintInformations.MintInformation memory info) internal pure returns(bool){
@@ -81,10 +86,34 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
         return _chainId;
     }
     
+
+    function extend(ExtensionInformations.ExtensionInformation memory info, bytes memory signature) external {
+        require(custodian
+                .checkSignature(info.encode(),
+                                signature), "Invalid Signature");
+        require(info.isValidCustodian(address(custodian)), "Not valid custodian");
+        require(_exists(info.tokenId), "Token does not exist");
+        
+        require(info.isValidInfo(), "Is not valid info");
+        require(info.isValidChainId(_chainId), "Is not valid chain");
+        require(_isValidNonce(info.tokenId, info.nonce),  "Is Not Valid Nonce");
+        
+        require(info.isValidBlock(), "Is Not Valid Block");
+        
+        _updateNonce(info.tokenId, info.nonce);
+
+        domains[info.tokenId].updateExpiry(info.expiryTime);
+
+        emit DomainExtended(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, domains[info.tokenId].expiryTime, domains[info.tokenId].name);
+
+        
+    }
+    
     function mint(MintInformations.MintInformation memory info, bytes memory signature) external returns(uint256){
         require(custodian
                 .checkSignature(info.encode(),
                                 signature), "Invalid Signature");
+        require(info.isValidCustodian(address(custodian)), "Not valid custodian");
         require(!_exists(info.tokenId), "Token Exists");
         
         require(info.isValidInfo(), "Is not valid info");
@@ -107,15 +136,16 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
 
             domains[info.tokenId] = domain;
             
-        _updateNonce(info);
+            _updateNonce(info.tokenId, info.nonce);
 
         _mint(info.destination.owner, info.tokenId);
-        emit DomainMinted(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, domains[info.tokenId].name);
+        emit DomainMinted(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, info.expiryTime, domains[info.tokenId].name);
         return info.tokenId;
     }
 
     function burn(BurnInformations.BurnInformation memory info, bytes memory signature) external {
         require(custodian.checkSignature(info.encode(), signature), "Invalid signature");
+        require(info.isValidCustodian(address(custodian)), "Not valid custodian");
         require(_exists(info.tokenId), "Token does not exist");
         require(info.isValidInfo(), "Is not valid info");
         require(info.isValidChainId(_chainId), "Is not valid chain");
@@ -127,26 +157,29 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
 
         require(_isApprovedOrOwner(info.source.owner, info.tokenId), "not owner of domain"); // ??
         
-        emit DomainBurned(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, domains[info.tokenId].name);
+        emit DomainBurned(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, domains[info.tokenId].expiryTime, domains[info.tokenId].name);
         
         delete domains[info.tokenId];
-        
+        _updateNonce(info.tokenId, info.nonce);
         _burn(info.tokenId);
         
         
     }
-
-     function _beforeTokenTransfer(
+    
+    function _beforeTokenTransfer(
         address from,
         address to,
         uint256 tokenId
     ) internal view override {
          if(to != address(0) && from != address(0)){
-             require(domains[tokenId].canTransfer(), "Can not transfer");
+             require(domains[tokenId].isNotLocked(), "Domain is locked");
+             require(domains[tokenId].isNotCustodianLocked(), "Domain is locked by custodian");
+             require(domains[tokenId].isNotWithdrawing(), "Domain is being withdrawn");
+             require(domains[tokenId].isNotExpired(), "Domain is expired");
          }
      }
 
-     function setLock(uint256 tokenId, bool status) override external {
+    function setLock(uint256 tokenId, bool status) override external {
          require(_exists(tokenId));
          require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
          
@@ -189,7 +222,6 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
          emit WithdrawFulfilled(tokenId, domains[tokenId].name);
          delete domains[tokenId];
          _burn(tokenId);
-
      }
 
      function getDomainInfo(uint256 tokenId) override external view returns(Domains.Domain memory) {

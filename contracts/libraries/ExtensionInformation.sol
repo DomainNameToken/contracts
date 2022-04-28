@@ -1,18 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-library MintInformations {
-    
+library ExtensionInformations {
+
     struct Source {
         uint256 chainId;
         address owner;
         uint256 blockNumber;
         uint256 blockNumberTTL;
     }
-
     
-    
-    struct MintInformation {
+    struct ExtensionInformation {
         uint256 messageType;
         address custodian;
         uint256 tokenId;
@@ -23,12 +21,12 @@ library MintInformations {
         uint256 expiryTime;
     }
 
-    
     function MESSAGE_TYPE() internal pure returns(uint256) {
-        return uint256(keccak256(abi.encode("dnt.domain.messagetype.mint")));
+        return uint256(keccak256(abi.encode("dnt.domain.messagetype.extension")));
+        
     }
     
-    function encode(MintInformation memory info) internal pure returns(bytes32) {
+    function encode(ExtensionInformation memory info) internal pure returns(bytes32) {
          return keccak256(abi
                           .encode(
                                   MESSAGE_TYPE(),
@@ -47,28 +45,29 @@ library MintInformations {
                                   
                                   info.nonce,
                                   info.domainName,
-                                  info.expiryTime
-                                  ));
+                                  info.expiryTime));
     }
 
-    function isValidInfo(MintInformation memory info) internal view returns(bool) {
+    function isValidInfo(ExtensionInformation memory info) internal view returns(bool) {
         return info.tokenId == uint256(keccak256(abi.encode(info.domainName)))
             && info.expiryTime > block.timestamp
-            && info.destination.owner != address(0)
+              && info.source.owner != address(0)
+            && info.source.owner == info.destination.owner
             && info.messageType == MESSAGE_TYPE();
     }
     
-    function isValidChainId(MintInformation memory info, uint256 expectedChainId) internal pure returns(bool) {
-        return expectedChainId == info.destination.chainId;
+    function isValidChainId(ExtensionInformation memory info, uint256 expectedChainId) internal pure returns(bool) {
+        return expectedChainId == info.source.chainId;
     }
 
-    
-    function isValidCustodian(MintInformation memory info, address expectedCustodian) internal pure returns(bool) {
+    function isValidCustodian(ExtensionInformation memory info, address expectedCustodian) internal pure returns(bool) {
         return expectedCustodian == info.custodian;
     }
     
-    function isValidBlock(MintInformation memory info) internal view returns(bool) {
-        return block.number >= info.destination.blockNumber
+    function isValidBlock(ExtensionInformation memory info) internal view returns(bool) {
+        return  block.number >= info.source.blockNumber
+                && block.number <= info.source.blockNumber + info.source.blockNumberTTL
+            && block.number >= info.destination.blockNumber
             && block.number <= info.destination.blockNumber + info.destination.blockNumberTTL;
     }
 }

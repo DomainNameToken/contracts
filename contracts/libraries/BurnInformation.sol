@@ -19,6 +19,7 @@ library BurnInformations {
         uint256 nonce;
         string domainName;
         uint256 expiryTime;
+      uint256 withdrawLocktime;
     }
 
     
@@ -45,7 +46,8 @@ library BurnInformations {
                                         
                                         info.nonce,
                                         info.domainName,
-                                        info.expiryTime));
+                                  info.expiryTime,
+                                  info.withdrawLocktime));
     }
 
     function isValidInfo(BurnInformation memory info) internal view returns(bool) {

@@ -21,6 +21,7 @@ library MintInformations {
         uint256 nonce;
         string domainName;
         uint256 expiryTime;
+      uint256 withdrawLocktime;
     }
 
     
@@ -47,7 +48,8 @@ library MintInformations {
                                   
                                   info.nonce,
                                   info.domainName,
-                                  info.expiryTime
+                                  info.expiryTime,
+                                  info.withdrawLocktime,
                                   ));
     }
 

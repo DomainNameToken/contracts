@@ -3,39 +3,45 @@ pragma solidity ^0.8.0;
 
 library Domains {
     struct Domain {
-        string name;
-        uint256 expiryTime;
-        uint256 lockTime;
-        uint256 custodianLock;
-        uint256 withdrawInitiated;
+      string name;
+      uint256 expiryTime;
+      uint256 lockTime;
+      uint256 custodianLock;
+      uint256 withdrawLocktime;
+      uint256 withdrawInitiated;
     }
 
     function domainNameToId(string memory domainName) internal pure returns(uint256){
         return uint256(keccak256(abi.encode(domainName)));
     }
     
-    function domainHash(Domain memory domain) internal pure returns(bytes32) {
+    function domainHash(Domain storage domain) internal view returns(bytes32) {
         return keccak256(abi.encode(domain.name));
     }
     
-    function getTokenId(Domain memory domain) internal pure returns(uint256){
+    function getTokenId(Domain storage domain) internal view returns(uint256){
         return uint256(keccak256(abi.encode(domain.name)));
     }
-    function isNotLocked(Domain memory domain) internal pure returns (bool) {
+    function isNotLocked(Domain storage domain) internal view returns (bool) {
         return domain.lockTime == 0;
     }
-    function isNotExpired(Domain memory domain) internal view returns (bool) {
+    function isNotExpired(Domain storage domain) internal view returns (bool) {
         return domain.expiryTime > block.timestamp;
     }
 
-    function isNotCustodianLocked(Domain memory domain) internal pure returns(bool) {
+    function isNotCustodianLocked(Domain storage domain) internal view returns(bool) {
         return domain.custodianLock == 0;
     }
-    function isNotWithdrawing(Domain memory domain) internal pure returns(bool) {
+    function isNotWithdrawing(Domain storage domain) internal view returns(bool) {
         return domain.withdrawInitiated == 0;
     }
-
-    function canTransfer(Domain memory domain) internal view returns(bool) {
+    function canInitiateWithdraw(Domain storage domain) internal view returns(bool) {
+      return isNotWithdrawing(domain)
+        && isNotLocked(domain)
+        && isNotCustodianLocked(domain)
+        && domain.withdrawLocktime < block.timestamp;
+    }
+    function canTransfer(Domain storage domain) internal view returns(bool) {
         return isNotWithdrawing(domain)
             && isNotCustodianLocked(domain)
             && isNotExpired(domain)
@@ -66,5 +72,7 @@ library Domains {
             domain.custodianLock = 0;
         }
     }
+
+
     
 }

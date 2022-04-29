@@ -19,6 +19,7 @@ library ExtensionInformations {
         uint256 nonce;
         string domainName;
         uint256 expiryTime;
+      uint256 withdrawLocktime;
     }
 
     function MESSAGE_TYPE() internal pure returns(uint256) {
@@ -45,7 +46,8 @@ library ExtensionInformations {
                                   
                                   info.nonce,
                                   info.domainName,
-                                  info.expiryTime));
+                                  info.expiryTime,
+                                  info.withdrawLocktime));
     }
 
     function isValidInfo(ExtensionInformation memory info) internal view returns(bool) {

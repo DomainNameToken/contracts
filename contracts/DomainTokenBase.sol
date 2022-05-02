@@ -104,7 +104,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
 
         domains[info.tokenId].updateExpiry(info.expiryTime);
 
-        emit DomainExtended(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, domains[info.tokenId].expiryTime, domains[info.tokenId].name);
+        emit DomainExtended(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, domains[info.tokenId].expiryTime, domains[info.tokenId].withdrawLocktime, domains[info.tokenId].name);
 
         
     }
@@ -131,7 +131,8 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
                     expiryTime: info.expiryTime,
                     lockTime: block.timestamp,
                     custodianLock: 0,
-                    withdrawInitiated: 0
+              withdrawInitiated: 0,
+              withdrawLocktime: info.withdrawLocktime
                     });
 
             domains[info.tokenId] = domain;
@@ -139,10 +140,11 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
             _updateNonce(info.tokenId, info.nonce);
 
         _mint(info.destination.owner, info.tokenId);
-        emit DomainMinted(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, info.expiryTime, domains[info.tokenId].name);
+        emit DomainMinted(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, info.expiryTime, domains[info.tokenId].withdrawLocktime, domains[info.tokenId].name);
         return info.tokenId;
     }
 
+    
     function burn(BurnInformations.BurnInformation memory info, bytes memory signature) external {
         require(custodian.checkSignature(info.encode(), signature), "Invalid signature");
         require(info.isValidCustodian(address(custodian)), "Not valid custodian");
@@ -157,7 +159,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
 
         require(_isApprovedOrOwner(info.source.owner, info.tokenId), "not owner of domain"); // ??
         
-        emit DomainBurned(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, domains[info.tokenId].expiryTime, domains[info.tokenId].name);
+        emit DomainBurned(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, domains[info.tokenId].expiryTime, domains[info.tokenId].withdrawLocktime, domains[info.tokenId].name);
         
         delete domains[info.tokenId];
         _updateNonce(info.tokenId, info.nonce);
@@ -180,46 +182,54 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
      }
 
     function setLock(uint256 tokenId, bool status) override external {
-         require(_exists(tokenId));
-         require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
+      require(_exists(tokenId), "token does not exist");
+      require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
+      
+      domains[tokenId].setLock(status);
          
-         domains[tokenId].setLock(status);
-         
-     }
+    }
      
-     modifier onlyOperator(){
+    modifier onlyOperator(){
          require( msg.sender == address(custodian)
                  || msg.sender == custodian.getOwner()
                  || custodian.isOperator(msg.sender), "Not operator");
          _;
      }
 
+     function forceBurn(uint256 tokenId) external onlyOperator {
+       require(_exists(tokenId), "token does not exist");
+       emit DomainBurned(_chainId, tokenId, _chainId, 0, ownerOf(tokenId), address(0), domains[tokenId].expiryTime, domains[tokenId].withdrawLocktime, domains[tokenId].name);        
+        delete domains[tokenId];
+        _burn(tokenId);
+    }
+
+
      function setCustodianLock(uint256 tokenId, bool status) override external  onlyOperator {
+       require(_exists(tokenId), "Domain does not exist");
          domains[tokenId].setCustodianLock(status);
-         emit CustodianLock(tokenId, domains[tokenId].custodianLock);
+         emit CustodianLock(_chainId, tokenId, domains[tokenId].custodianLock);
      }
      
-     event CustodianLock(uint256 tokenId, uint256 timestamp);
-     event WithdrawRequest(uint256 tokenId, address sender);
-     event WithdrawFulfilled(uint256 tokenId, string domainName);
      function requestWithdraw(uint256 tokenId) override external {
          require(_exists(tokenId), "token does not exist");
          require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
-         require(domains[tokenId].isNotLocked(), "domain locked");
          require(custodian.isActiveUser(msg.sender), "not active user");
-
+         require(domains[tokenId].isNotLocked(), "Domain is locked");
+         require(domains[tokenId].canInitiateWithdraw(), "can not initiate withdraw");
          domains[tokenId].setWithdraw(true);
-         emit WithdrawRequest(tokenId, msg.sender);
+         emit WithdrawRequest(_chainId, tokenId, msg.sender);
      }
 
      function cancelWithdrawRequest(uint256 tokenId) override external onlyOperator {         
          require(_exists(tokenId), "token does not exist");
          domains[tokenId].setWithdraw(false);
+         emit WithdrawCancel(_chainId, tokenId);
      }
 
      function fulfillWithdraw(uint256 tokenId) override external onlyOperator {
-         require(!domains[tokenId].isNotWithdrawing());
-         emit WithdrawFulfilled(tokenId, domains[tokenId].name);
+       require(_exists(tokenId), "token does not exist");
+       require(!domains[tokenId].isNotWithdrawing(), "not withdrawing");
+         emit WithdrawFulfilled(_chainId, tokenId, domains[tokenId].name);
          delete domains[tokenId];
          _burn(tokenId);
      }
@@ -231,5 +241,13 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
      function getTokenIdByName(string memory domainName) override external pure returns(uint256) {
          return Domains.domainNameToId(domainName);
      }
-     
+     function isLocked(uint256 tokenId) external view returns(bool) {
+       return !domains[tokenId].isNotLocked();
+     }
+     function isCustodianLocked(uint256 tokenId) external view returns(bool) {
+       return !domains[tokenId].isNotCustodianLocked();
+     }
+     function isWithdrawing(uint256 tokenId) external view returns(bool) {
+       return !domains[tokenId].isNotWithdrawing();
+     }
 }

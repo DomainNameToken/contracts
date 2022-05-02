@@ -7,7 +7,6 @@ library MintInformations {
         uint256 chainId;
         address owner;
         uint256 blockNumber;
-        uint256 blockNumberTTL;
     }
 
     
@@ -21,6 +20,7 @@ library MintInformations {
         uint256 nonce;
         string domainName;
         uint256 expiryTime;
+      uint256 withdrawLocktime;
     }
 
     
@@ -34,20 +34,16 @@ library MintInformations {
                                   MESSAGE_TYPE(),
                                   info.custodian,
                                   info.tokenId,
-                                  
                                   info.destination.chainId,
                                   info.destination.owner,
                                   info.destination.blockNumber,
-                                  info.destination.blockNumberTTL,
-                                  
                                   info.source.chainId,
                                   info.source.owner,
                                   info.source.blockNumber,
-                                  info.source.blockNumberTTL,
-                                  
                                   info.nonce,
                                   info.domainName,
-                                  info.expiryTime
+                                  info.expiryTime,
+                                  info.withdrawLocktime
                                   ));
     }
 
@@ -68,7 +64,6 @@ library MintInformations {
     }
     
     function isValidBlock(MintInformation memory info) internal view returns(bool) {
-        return block.number >= info.destination.blockNumber
-            && block.number <= info.destination.blockNumber + info.destination.blockNumberTTL;
+      return block.number >= info.destination.blockNumber;
     }
 }

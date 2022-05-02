@@ -7,7 +7,6 @@ library BurnInformations {
         uint256 chainId;
         address owner;
         uint256 blockNumber;
-        uint256 blockNumberTTL;
     }
     
     struct BurnInformation {
@@ -37,13 +36,11 @@ library BurnInformations {
                                         info.destination.chainId,
                                         info.destination.owner,
                                         info.destination.blockNumber,
-                                        info.destination.blockNumberTTL,
-
+                            
                                         info.source.chainId,
                                         info.source.owner,
                                         info.source.blockNumber,
-                                        info.source.blockNumberTTL,
-                                        
+                                                                    
                                         info.nonce,
                                         info.domainName,
                                   info.expiryTime,
@@ -66,7 +63,6 @@ library BurnInformations {
     }
     
     function isValidBlock(BurnInformation memory info) internal view returns(bool) {
-        return  block.number >= info.source.blockNumber
-                && block.number <= info.source.blockNumber + info.source.blockNumberTTL;
+      return  block.number >= info.source.blockNumber;
     }
 }

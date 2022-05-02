@@ -38,14 +38,12 @@ const hashInformation = (info) => {
       info.destination.chainId || 0,
       info.destination.owner || 0,
       info.destination.blockNumber || 0,
-      info.destination.blockNumberTTL || 0,
     ],
 
     [
       info.source.chainId || 0,
       info.source.owner || 0,
       info.source.blockNumber || 0,
-      info.source.blockNumberTTL || 0,
     ],
 
     info.nonce,
@@ -63,12 +61,10 @@ const hashInformation = (info) => {
       'uint256', // destination chain
       'address', // destination owner
       'uint256', // destination block
-      'uint256', // destination ttl
 
       'uint256', // source chain
       'address', // source owner
       'uint256', // source block
-      'uint256', // source ttl
 
       'uint256', // Nonce
       'string', // domainName
@@ -104,13 +100,14 @@ describe('Domain', () => {
   let custodianGateway;
   let nonce = 1000;
   const ZEROA = ethers.constants.AddressZero;
+  const now = Math.floor(Date.now() / 1000);
   const generateInfo = async (
     type,
     domainName,
     sourceOwner = ZEROA,
     destinationOwner = ZEROA,
-    expiryTime = Math.floor(Date.now() / 1000) + 3600 * 24 * 365,
-    withdrawLocktime = Math.floor(Date.now() / 1000) + 90 * 24 * 3600,
+    expiryTime = now + 3600 * 24 * 365,
+    withdrawLocktime = now + 90 * 24 * 3600,
   ) => {
     const block = await ethers.provider.getBlock();
     const { chainId } = await ethers.provider.getNetwork();
@@ -127,14 +124,12 @@ describe('Domain', () => {
           chainId,
           owner: destinationOwner.address ? destinationOwner.address : destinationOwner,
           blockNumber: parseInt(`${block.number}`, 10) - 1,
-          blockNumberTTL: 15,
         },
 
         source: {
           chainId: 0,
           owner: sourceOwner.address ? sourceOwner.address : sourceOwner,
           blockNumber: 0,
-          blockNumberTTL: 0,
         },
 
         nonce,
@@ -152,14 +147,14 @@ describe('Domain', () => {
           chainId,
           owner: sourceOwner.address ? sourceOwner.address : sourceOwner,
           blockNumber: parseInt(`${block.number}`, 10) - 1,
-          blockNumberTTL: 15,
+
         },
 
         destination: {
           chainId: 0,
           owner: destinationOwner.address ? destinationOwner.address : destinationOwner,
           blockNumber: 0,
-          blockNumberTTL: 0,
+
         },
 
         nonce,
@@ -177,14 +172,14 @@ describe('Domain', () => {
           chainId,
           owner: sourceOwner.address ? sourceOwner.address : sourceOwner,
           blockNumber: parseInt(`${block.number}`, 10) - 1,
-          blockNumberTTL: 15,
+
         },
 
         destination: {
           chainId,
           owner: destinationOwner.address ? destinationOwner.address : destinationOwner,
           blockNumber: parseInt(`${block.number}`, 10) - 1,
-          blockNumberTTL: 15,
+
         },
 
         nonce,
@@ -259,6 +254,7 @@ describe('Domain', () => {
         ZEROA,
         userAccount.address,
         mintInfo.expiryTime,
+        mintInfo.withdrawLocktime,
         'test.com',
       );
 
@@ -283,6 +279,7 @@ describe('Domain', () => {
         ZEROA,
         userAccount.address,
         mintInfo.expiryTime,
+        mintInfo.withdrawLocktime,
         'test.com',
       );
 
@@ -305,10 +302,52 @@ describe('Domain', () => {
         userAccount.address,
         ZEROA,
         mintInfo.expiryTime,
+        mintInfo.withdrawLocktime,
         domainName,
       );
 
     const existsBurned = await domainGateway.exists(burnInfo.tokenId);
+    expect(existsBurned).to.equal(false);
+    expect(await domainGateway.balanceOf(otherAccounts[0].address)).to.equal(0);
+  });
+
+  it('should correctly forcefully burn', async () => {
+    await custodianGateway.addOperator(admin.address);
+    const domainName = 'test.com';
+    const mintInfo = await generateInfo('mint', domainName, ZEROA, userAccount);
+
+    const mintInfoSignature = await admin.signMessage(ethers.utils.arrayify(hashInformation(mintInfo)));
+
+    await expect(domainGateway.mint(mintInfo, mintInfoSignature)).to.emit(domainGateway, 'DomainMinted')
+      .withArgs(
+        mintInfo.destination.chainId,
+        mintInfo.tokenId,
+        0,
+        mintInfo.destination.chainId,
+        ZEROA,
+        userAccount.address,
+        mintInfo.expiryTime,
+        mintInfo.withdrawLocktime,
+        'test.com',
+      );
+
+    const exists = await domainGateway.exists(mintInfo.tokenId);
+    expect(exists).to.equal(true);
+    expect(await domainGateway.balanceOf(otherAccounts[0].address)).to.equal(1);
+    await expect(domainGateway.forceBurn(mintInfo.tokenId)).to.emit(domainGateway, 'DomainBurned')
+      .withArgs(
+        mintInfo.destination.chainId,
+        mintInfo.tokenId,
+        mintInfo.destination.chainId,
+        0,
+        userAccount.address,
+        ZEROA,
+        mintInfo.expiryTime,
+        mintInfo.withdrawLocktime,
+        domainName,
+      );
+
+    const existsBurned = await domainGateway.exists(mintInfo.tokenId);
     expect(existsBurned).to.equal(false);
     expect(await domainGateway.balanceOf(otherAccounts[0].address)).to.equal(0);
   });
@@ -329,6 +368,7 @@ describe('Domain', () => {
         ethers.constants.AddressZero,
         otherAccounts[0].address,
         mintInfo.expiryTime,
+        mintInfo.withdrawLocktime,
         domainName,
       );
 
@@ -349,6 +389,7 @@ describe('Domain', () => {
         otherAccounts[0].address,
         otherAccounts[0].address,
         extendInfo.expiryTime,
+        extendInfo.withdrawLocktime,
         domainName,
       );
   });
@@ -372,6 +413,7 @@ describe('Domain', () => {
         ethers.constants.AddressZero,
         otherAccounts[0].address,
         mintInfo.expiryTime,
+        mintInfo.withdrawLocktime,
         'test.com',
       );
 
@@ -411,6 +453,7 @@ describe('Domain', () => {
         ethers.constants.AddressZero,
         otherAccounts[0].address,
         mintInfo.expiryTime,
+        mintInfo.withdrawLocktime,
         'test.com',
       );
 
@@ -425,5 +468,143 @@ describe('Domain', () => {
     await expect(domainGateway.connect(otherAccounts[0]).transferFrom(otherAccounts[0].address, otherAccounts[1].address, tokenId)).to.emit(domainGateway, 'Transfer');
     expect(await domainGateway.balanceOf(otherAccounts[0].address)).to.equal(0);
     expect(await domainGateway.balanceOf(otherAccounts[1].address)).to.equal(1);
+  });
+
+  it('should throw when withdrawing a domain before withdrawLocktime', async () => {
+    await custodianGateway.addOperator(admin.address);
+    const domainName = 'test.com';
+    const { chainId } = await ethers.provider.getNetwork();
+    const block = await ethers.provider.getBlock();
+    const tokenId = encodeDomainToId(domainName);
+
+    const mintInfo = await generateInfo('mint', domainName, ZEROA, userAccount);
+    const mintInfoSignature = await admin.signMessage(ethers.utils.arrayify(hashInformation(mintInfo)));
+
+    await expect(domainGateway.mint(mintInfo, mintInfoSignature)).to.emit(domainGateway, 'DomainMinted')
+      .withArgs(
+        chainId,
+        tokenId,
+        0,
+        chainId,
+        ethers.constants.AddressZero,
+        otherAccounts[0].address,
+        mintInfo.expiryTime,
+        mintInfo.withdrawLocktime,
+        'test.com',
+      );
+
+    const exists = await domainGateway.exists(tokenId);
+    expect(exists).to.equal(true);
+    expect(await domainGateway.balanceOf(otherAccounts[0].address)).to.equal(1);
+
+    await expect(domainGateway.connect(otherAccounts[0]).requestWithdraw(tokenId)).revertedWith('not active user');
+
+    await custodianGateway.registerUser(otherAccounts[0].address);
+
+    await custodianGateway.activateUser(otherAccounts[0].address);
+
+    await expect(domainGateway.connect(otherAccounts[0]).requestWithdraw(tokenId)).revertedWith('Domain is locked');
+
+    await domainGateway.connect(otherAccounts[0]).setLock(tokenId, false);
+
+    await expect(domainGateway.connect(otherAccounts[0]).requestWithdraw(tokenId)).revertedWith('can not initiate withdraw');
+  });
+
+  it('should withdraw a domain', async () => {
+    await custodianGateway.addOperator(admin.address);
+    const domainName = 'test.com';
+    const { chainId } = await ethers.provider.getNetwork();
+    const block = await ethers.provider.getBlock();
+    const tokenId = encodeDomainToId(domainName);
+    const mintInfo = await generateInfo('mint', domainName, ZEROA, userAccount, now + 1 * 365 * 24 * 3600, 0);
+    const mintInfoSignature = await admin.signMessage(ethers.utils.arrayify(hashInformation(mintInfo)));
+
+    await expect(domainGateway.mint(mintInfo, mintInfoSignature)).to.emit(domainGateway, 'DomainMinted')
+      .withArgs(
+        chainId,
+        tokenId,
+        0,
+        chainId,
+        ethers.constants.AddressZero,
+        otherAccounts[0].address,
+        mintInfo.expiryTime,
+        mintInfo.withdrawLocktime,
+        'test.com',
+      );
+
+    const exists = await domainGateway.exists(tokenId);
+    expect(exists).to.equal(true);
+    expect(await domainGateway.balanceOf(otherAccounts[0].address)).to.equal(1);
+    await expect(domainGateway.connect(otherAccounts[0]).requestWithdraw(tokenId)).revertedWith('not active user');
+
+    await custodianGateway.registerUser(otherAccounts[0].address);
+    await custodianGateway.activateUser(otherAccounts[0].address);
+
+    await expect(domainGateway.connect(otherAccounts[0]).requestWithdraw(tokenId)).revertedWith('Domain is locked');
+
+    await domainGateway.connect(otherAccounts[0]).setLock(tokenId, false);
+
+    await expect(domainGateway.connect(otherAccounts[0]).requestWithdraw(tokenId)).to.emit(domainGateway, 'WithdrawRequest')
+      .withArgs(
+        chainId,
+        tokenId,
+        otherAccounts[0].address,
+      );
+    expect(await domainGateway.isWithdrawing(tokenId)).to.equal(true);
+    await expect(domainGateway.fulfillWithdraw(tokenId)).to.emit(domainGateway, 'WithdrawFulfilled')
+      .withArgs(
+        chainId,
+        tokenId,
+        'test.com',
+      );
+    expect(await domainGateway.balanceOf(otherAccounts[0].address)).to.equal(0);
+    expect(await domainGateway.exists(tokenId)).to.equal(false);
+  });
+  it('should cancel a domain withdraw', async () => {
+    await custodianGateway.addOperator(admin.address);
+    const domainName = 'test.com';
+    const { chainId } = await ethers.provider.getNetwork();
+    const block = await ethers.provider.getBlock();
+    const tokenId = encodeDomainToId(domainName);
+    const now = Math.floor(Date.now() / 1000);
+    const mintInfo = await generateInfo('mint', domainName, ZEROA, userAccount, now + 1 * 365 * 24 * 3600, 0);
+    const mintInfoSignature = await admin.signMessage(ethers.utils.arrayify(hashInformation(mintInfo)));
+
+    await expect(domainGateway.mint(mintInfo, mintInfoSignature)).to.emit(domainGateway, 'DomainMinted')
+      .withArgs(
+        chainId,
+        tokenId,
+        0,
+        chainId,
+        ethers.constants.AddressZero,
+        otherAccounts[0].address,
+        mintInfo.expiryTime,
+        mintInfo.withdrawLocktime,
+        'test.com',
+      );
+
+    const exists = await domainGateway.exists(tokenId);
+    expect(exists).to.equal(true);
+    expect(await domainGateway.balanceOf(otherAccounts[0].address)).to.equal(1);
+    await expect(domainGateway.connect(otherAccounts[0]).requestWithdraw(tokenId)).revertedWith('not active user');
+
+    await custodianGateway.registerUser(otherAccounts[0].address);
+    await custodianGateway.activateUser(otherAccounts[0].address);
+
+    await expect(domainGateway.connect(otherAccounts[0]).requestWithdraw(tokenId)).revertedWith('Domain is locked');
+
+    await domainGateway.connect(otherAccounts[0]).setLock(tokenId, false);
+
+    await expect(domainGateway.connect(otherAccounts[0]).requestWithdraw(tokenId)).to.emit(domainGateway, 'WithdrawRequest')
+      .withArgs(
+        chainId,
+        tokenId,
+        otherAccounts[0].address,
+      );
+    await expect(domainGateway.cancelWithdrawRequest(tokenId)).to.emit(domainGateway, 'WithdrawCancel')
+      .withArgs(
+        chainId,
+        tokenId,
+      );
   });
 });

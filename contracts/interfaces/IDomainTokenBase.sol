@@ -34,10 +34,10 @@ interface IDomainTokenBase {
                          string domainName);
 
     
-    event CustodianLock(uint256 tokenId, uint256 timestamp);
-    event WithdrawRequest(uint256 tokenId, address sender);
-    event WithdrawFulfilled(uint256 tokenId, string domainName);
-    event WithdrawCancel(uint256 tokenId);
+    event CustodianLock(uint256 chainId, uint256 tokenId, uint256 timestamp);
+    event WithdrawRequest(uint256 chainId, uint256 tokenId, address sender);
+    event WithdrawFulfilled(uint256 chainId, uint256 tokenId, string domainName);
+    event WithdrawCancel(uint256 chainId, uint256 tokenId);
     function getTokenIdByName(string memory) external view returns(uint256);
     function getDomainInfo(uint256) external view returns(Domains.Domain memory);
     function fulfillWithdraw(uint256) external;

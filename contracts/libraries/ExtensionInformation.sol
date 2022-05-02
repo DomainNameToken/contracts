@@ -7,7 +7,6 @@ library ExtensionInformations {
         uint256 chainId;
         address owner;
         uint256 blockNumber;
-        uint256 blockNumberTTL;
     }
     
     struct ExtensionInformation {
@@ -37,13 +36,11 @@ library ExtensionInformations {
                                   info.destination.chainId,
                                   info.destination.owner,
                                   info.destination.blockNumber,
-                                  info.destination.blockNumberTTL,
-                                  
+                                                              
                                   info.source.chainId,
                                   info.source.owner,
                                   info.source.blockNumber,
-                                  info.source.blockNumberTTL,
-                                  
+                                                              
                                   info.nonce,
                                   info.domainName,
                                   info.expiryTime,
@@ -68,8 +65,7 @@ library ExtensionInformations {
     
     function isValidBlock(ExtensionInformation memory info) internal view returns(bool) {
         return  block.number >= info.source.blockNumber
-                && block.number <= info.source.blockNumber + info.source.blockNumberTTL
-            && block.number >= info.destination.blockNumber
-            && block.number <= info.destination.blockNumber + info.destination.blockNumberTTL;
+               
+          && block.number >= info.destination.blockNumber;
     }
 }

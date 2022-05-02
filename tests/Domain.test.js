@@ -606,5 +606,6 @@ describe('Domain', () => {
         chainId,
         tokenId,
       );
+    expect(await domainGateway.isWithdrawing(tokenId)).to.equal(false);
   });
 });

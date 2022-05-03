@@ -22,9 +22,10 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
         custodian.setName(_name);
         custodian.setBaseUrl(_baseUrl);
     }
-
+    
     function getOwner() external override view returns(address) {
         return owner();
+        
     }
     
     function name() external override view returns(string memory) {

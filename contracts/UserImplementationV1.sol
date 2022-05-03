@@ -10,8 +10,6 @@ import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableM
 
 contract UserImplementationV1 is IUser, Destroyable, Initializable {
     using EnumerableMap for EnumerableMap.UintToAddressMap;
-
-    
     
     function registerUser(Custodian storage custodian, address user) internal {
         custodian.registeredUsers.set(uint256(uint160(user)), user);

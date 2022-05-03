@@ -7,7 +7,7 @@
     "deploy-v1": "node ./scripts/deploy-v1.js",
     "ganache": "node ./scripts/start-ganache.js",
     "init-solhint": "./node_modules/.bin/solhint init-config",
-    "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
+    "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol contracts/*.sol",
     "prettier:solidity": "./node_modules/.bin/prettier --write contracts/**/*.sol",
     "test": "./node_modules/hardhat/internal/cli/cli.js test"
   },
@@ -48,7 +48,7 @@
   },
   "husky": {
     "hooks": {
-       "pre-push": "npm run prettier:solidity"
+      "pre-push": "npm run prettier:solidity"
     }
   }
 }

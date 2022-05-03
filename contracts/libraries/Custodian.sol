@@ -3,15 +3,16 @@ pragma solidity ^0.8.0;
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
+import {IUser} from "../interfaces/IUser.sol";
+
 library CustodianLib {
  using ECDSA for bytes32;
  using EnumerableMap for EnumerableMap.UintToAddressMap;
+
  struct Custodian {
   string name;
   string baseUrl;
-  EnumerableMap.UintToAddressMap operators;
-  EnumerableMap.UintToAddressMap registeredUsers;
-  EnumerableMap.UintToAddressMap activeUsers;
+  IUser users;
  }
 
  function setName(Custodian storage custodian, string memory name) internal {
@@ -20,6 +21,10 @@ library CustodianLib {
 
  function setBaseUrl(Custodian storage custodian, string memory baseUrl) internal {
   custodian.baseUrl = baseUrl;
+ }
+
+ function setUsers(Custodian storage custodian, address users_) internal {
+  custodian.users = IUser(users_);
  }
 
  function checkSignature(

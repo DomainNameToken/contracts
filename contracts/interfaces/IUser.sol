@@ -5,6 +5,7 @@ interface IUser {
  event UserRegistered(address indexed user);
  event UserActivated(address indexed user);
  event UserDeactivated(address indexed user);
+ event UserDeregistered(address indexed user);
 
  function activateUser(address) external;
 
@@ -15,4 +16,6 @@ interface IUser {
  function registerUser(address) external;
 
  function isRegisteredUser(address) external view returns (bool);
+
+ function deregisterUser(address) external;
 }

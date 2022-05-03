@@ -60,10 +60,6 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
         custodian = ICustodian(_custodian);
     }
     
-    function _isValidNonce(uint256 tokenId, uint256 nonce) internal view returns(bool) {
-        return _nonces[tokenId] < nonce;
-    }
-
     function _updateNonce(uint256 tokenId, uint256 nonce) internal {
         require(nonce > _nonces[tokenId], "invalid nonce");
         _nonces[tokenId] = nonce;
@@ -83,40 +79,28 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
         return _chainId;
     }
     
-
-    function extend(DataStructs.Information memory info, bytes memory signature) external onlyCustodian {
-        require(custodian
-                .checkSignature(ExtensionInformation.encode(info),
-                                signature), "Invalid Signature");
-        require(info.isValidCustodian(address(custodian)), "Not valid custodian");
+    function extend(DataStructs.Information memory info) external onlyCustodian {
         require(_exists(info.tokenId), "Token does not exist");
         
         require(ExtensionInformation.isValidInfo(info), "Is not valid info");
         require(ExtensionInformation.isValidChainId(info,_chainId), "Is not valid chain");
-        require(_isValidNonce(info.tokenId, info.nonce),  "Is Not Valid Nonce");
-        
+                
         require(ExtensionInformation.isValidBlock(info), "Is Not Valid Block");
-        
-        _updateNonce(info.tokenId, info.nonce);
 
         domains[info.tokenId].updateExpiry(info.expiryTime);
-
+        
         emit DomainExtended(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, domains[info.tokenId].expiryTime, domains[info.tokenId].withdrawLocktime, domains[info.tokenId].name);
 
         
     }
     
     function mint(DataStructs.Information memory info, bytes memory signature) external onlyCustodian returns(uint256){
-        require(custodian
-                .checkSignature(MintInformation.encode(info),
-                                signature), "Invalid Signature");
-        require(MintInformation.isValidCustodian(info, address(custodian)), "Not valid custodian");
+
         require(!_exists(info.tokenId), "Token Exists");
         
         require(MintInformation.isValidInfo(info), "Is not valid info");
         require(MintInformation.isValidChainId(info,_chainId), "Is not valid chain");
-        require(_isValidNonce(info.tokenId, info.nonce),  "Is Not Valid Nonce");
-        
+                
         require(MintInformation.isValidBlock(info), "Is Not Valid Block");
 
         require(_isValidTokenId(info), "Is Not Valid Token Id");
@@ -134,8 +118,6 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
 
             domains[info.tokenId] = domain;
             
-            _updateNonce(info.tokenId, info.nonce);
-
         _mint(info.destination.owner, info.tokenId);
         emit DomainMinted(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, info.expiryTime, domains[info.tokenId].withdrawLocktime, domains[info.tokenId].name);
         return info.tokenId;
@@ -143,12 +125,10 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
 
     
     function burn(DataStructs.formation memory info, bytes memory signature) external onlyCustodian {
-        require(custodian.checkSignature(BurnInformation.encode(info), signature), "Invalid signature");
-        require(BurnInformation.isValidCustodian(info, address(custodian)), "Not valid custodian");
+
         require(_exists(info.tokenId), "Token does not exist");
         require(BurnInformation.isValidInfo(info), "Is not valid info");
         require(BurnInformation.isValidChainId(info, _chainId), "Is not valid chain");
-        require(_isValidNonce(info.tokenId, info.nonce),  "Is Not Valid Nonce");
         
         require(BurnInformation.isValidBlock(info), "Is Not Valid Block");
 
@@ -159,7 +139,6 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
         emit DomainBurned(_chainId, info.tokenId, info.source.chainId, info.destination.chainId, info.source.owner, info.destination.owner, domains[info.tokenId].expiryTime, domains[info.tokenId].withdrawLocktime, domains[info.tokenId].name);
         
         delete domains[info.tokenId];
-        _updateNonce(info.tokenId, info.nonce);
         _burn(info.tokenId);
         
         
@@ -191,14 +170,6 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
          
     }
      
-     function forceBurn(uint256 tokenId) external onlyCustodian {
-       require(_exists(tokenId), "token does not exist");
-       emit DomainBurned(_chainId, tokenId, _chainId, 0, ownerOf(tokenId), address(0), domains[tokenId].expiryTime, domains[tokenId].withdrawLocktime, domains[tokenId].name);        
-        delete domains[tokenId];
-        _burn(tokenId);
-    }
-
-
      function setCustodianLock(uint256 tokenId, bool status) override external  onlyCustodian {
        require(_exists(tokenId), "Domain does not exist");
          domains[tokenId].setCustodianLock(status);
@@ -209,20 +180,20 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
      function requestWithdraw(uint256 tokenId) override external {
          require(_exists(tokenId), "token does not exist");
          require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
-         require(custodian.isActiveUser(msg.sender), "not active user");
+         require(custodian.users.isActiveUser(msg.sender), "not active user");
          require(domains[tokenId].isNotLocked(), "Domain is locked");
          require(domains[tokenId].canInitiateWithdraw(), "can not initiate withdraw");
          domains[tokenId].setWithdraw(true);
          emit WithdrawRequest(_chainId, tokenId, msg.sender);
      }
 
-     function cancelWithdrawRequest(uint256 tokenId) override external onlyOperator {         
+     function cancelWithdrawRequest(uint256 tokenId) override external onlyCustodian {         
          require(_exists(tokenId), "token does not exist");
          domains[tokenId].setWithdraw(false);
          emit WithdrawCancel(_chainId, tokenId);
      }
 
-     function fulfillWithdraw(uint256 tokenId) override external onlyOperator {
+     function fulfillWithdraw(uint256 tokenId) override external onlyCustodian {
        require(_exists(tokenId), "token does not exist");
        require(!domains[tokenId].isNotWithdrawing(), "not withdrawing");
          emit WithdrawFulfilled(_chainId, tokenId, domains[tokenId].name);

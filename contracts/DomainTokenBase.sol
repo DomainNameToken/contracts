@@ -29,12 +29,12 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
   constructor() ERC721Enumerable() ERC721("DOMAIN", "Domains") {}
 
   function initialize(
-    address _custodian,
+    address custodian_,
     string memory symbol_,
     string memory name_,
     uint256 chainId_
   ) public initializer {
-    custodian = ICustodian(_custodian);
+    custodian = ICustodian(custodian_);
     _name = name_;
     _symbol = symbol_;
     _chainId = chainId_;

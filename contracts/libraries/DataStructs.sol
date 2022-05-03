@@ -16,16 +16,13 @@ library DataStructs {
     Source source;
     uint256 nonce;
     string domainName;
-    uint256 expiryTime;
-    uint256 withdrawLocktime;
+    uint256 expiry;
   }
 
   struct Domain {
     string name;
-    uint256 expiryTime;
-    uint256 lockTime;
-    uint256 custodianLock;
-    uint256 withdrawLocktime;
-    uint256 withdrawInitiated;
+    uint256 expiry;
+    uint256 locked;
+    uint256 frozen;
   }
 }

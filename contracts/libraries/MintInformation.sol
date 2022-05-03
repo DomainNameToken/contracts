@@ -23,8 +23,7 @@ library MintInformation {
           info.source.blockNumber,
           info.nonce,
           info.domainName,
-          info.expiryTime,
-          info.withdrawLocktime
+          info.expiry
         )
       );
   }
@@ -32,7 +31,7 @@ library MintInformation {
   function isValidInfo(DataStructs.Information memory info) internal view returns (bool) {
     return
       info.tokenId == uint256(keccak256(abi.encode(info.domainName))) &&
-      info.expiryTime > block.timestamp &&
+      info.expiry > block.timestamp &&
       info.destination.owner != address(0) &&
       info.messageType == MESSAGE_TYPE();
   }

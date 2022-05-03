@@ -6,9 +6,11 @@ import {ICustodian} from "./interfaces/ICustodian.sol";
 import {Destroyable} from "./Destroyable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {IUser} from "./interfaces/IUser.sol";
+import {BytesDecoder} from "./libraries/BytesDecoder.sol";
 
 contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
   using CustodianLib for CustodianLib.Custodian;
+  using BytesDecoder for bytes;
   CustodianLib.Custodian private custodian;
   mapping(bytes32 => uint256) _nonces;
 
@@ -82,25 +84,6 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
     return _nonces[group];
   }
 
-  function extractRevertReason(bytes memory revertData)
-    internal
-    pure
-    returns (string memory reason)
-  {
-    uint256 l = revertData.length;
-    if (l < 68) return "";
-    uint256 t;
-    assembly {
-      revertData := add(revertData, 4)
-      t := mload(revertData) // Save the content of the length slot
-      mstore(revertData, sub(l, 4)) // Set proper length
-    }
-    reason = abi.decode(revertData, (string));
-    assembly {
-      mstore(revertData, t) // Restore the content of the length slot
-    }
-  }
-
   function externalCall(address _contract, bytes memory data)
     external
     payable
@@ -110,7 +93,7 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
   {
     (bool success, bytes memory response) = _contract.call{value: msg.value}(data);
     if (!success) {
-      revert(extractRevertReason(response));
+      revert(response.extractRevertReason());
     }
     return response;
   }
@@ -142,7 +125,7 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
     }
     (bool success, bytes memory response) = _contract.call{value: msg.value}(data);
     if (!success) {
-      revert(extractRevertReason(response));
+      revert(response.extractRevertReason());
     }
     return response;
   }

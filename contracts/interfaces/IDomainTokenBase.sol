@@ -11,8 +11,7 @@ interface IDomainTokenBase {
     uint256 destinationChainId,
     address sourceOwner,
     address destinationOwner,
-    uint256 expiryTime,
-    uint256 withdrawLocktime,
+    uint256 expiry,
     string domainName
   );
   event DomainMinted(
@@ -22,8 +21,7 @@ interface IDomainTokenBase {
     uint256 destinationChainId,
     address sourceOwner,
     address destinationOwner,
-    uint256 expiryTime,
-    uint256 withdrawLocktime,
+    uint256 expiry,
     string domainName
   );
   event DomainExtended(
@@ -33,27 +31,18 @@ interface IDomainTokenBase {
     uint256 destinationChainId,
     address sourceOwner,
     address destinationOwner,
-    uint256 expiryTime,
-    uint256 withdrawLocktime,
+    uint256 expiry,
     string domainName
   );
 
-  event CustodianLock(uint256 chainId, uint256 tokenId, uint256 timestamp);
-  event WithdrawRequest(uint256 chainId, uint256 tokenId, address sender);
-  event WithdrawFulfilled(uint256 chainId, uint256 tokenId, string domainName);
-  event WithdrawCancel(uint256 chainId, uint256 tokenId);
+  event DomainFreeze(uint256 chainId, uint256 tokenId, uint256 status);
+  event DomainLock(uint256 chainId, uint256 tokenId, uint256 status);
 
   function getTokenIdByName(string memory) external view returns (uint256);
 
   function getDomainInfo(uint256) external view returns (DataStructs.Domain memory);
 
-  function fulfillWithdraw(uint256) external;
-
-  function cancelWithdrawRequest(uint256) external;
-
-  function requestWithdraw(uint256) external;
-
-  function setCustodianLock(uint256, bool) external;
+  function setFreeze(uint256, bool) external;
 
   function setLock(uint256, bool) external;
 

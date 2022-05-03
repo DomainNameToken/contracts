@@ -17,62 +17,38 @@ library Domain {
   }
 
   function isNotLocked(DataStructs.Domain storage domain) internal view returns (bool) {
-    return domain.lockTime == 0;
+    return domain.locked == 0;
   }
 
   function isNotExpired(DataStructs.Domain storage domain) internal view returns (bool) {
-    return domain.expiryTime > block.timestamp;
+    return domain.expiry > block.timestamp;
   }
 
-  function isNotCustodianLocked(DataStructs.Domain storage domain) internal view returns (bool) {
-    return domain.custodianLock == 0;
-  }
-
-  function isNotWithdrawing(DataStructs.Domain storage domain) internal view returns (bool) {
-    return domain.withdrawInitiated == 0;
-  }
-
-  function canInitiateWithdraw(DataStructs.Domain storage domain) internal view returns (bool) {
-    return
-      isNotWithdrawing(domain) &&
-      isNotLocked(domain) &&
-      isNotCustodianLocked(domain) &&
-      domain.withdrawLocktime < block.timestamp;
+  function isNotFrozen(DataStructs.Domain storage domain) internal view returns (bool) {
+    return domain.frozen == 0;
   }
 
   function canTransfer(DataStructs.Domain storage domain) internal view returns (bool) {
-    return
-      isNotWithdrawing(domain) &&
-      isNotCustodianLocked(domain) &&
-      isNotExpired(domain) &&
-      isNotLocked(domain);
+    return isNotFrozen(domain) && isNotExpired(domain) && isNotLocked(domain);
   }
 
-  function updateExpiry(DataStructs.Domain storage domain, uint256 expiryTime) internal {
-    domain.expiryTime = expiryTime;
+  function updateExpiry(DataStructs.Domain storage domain, uint256 expiry) internal {
+    domain.expiry = expiry;
   }
 
   function setLock(DataStructs.Domain storage domain, bool status) internal {
     if (status) {
-      domain.lockTime = block.timestamp;
+      domain.locked = block.timestamp;
     } else {
-      domain.lockTime = 0;
+      domain.locked = 0;
     }
   }
 
-  function setWithdraw(DataStructs.Domain storage domain, bool status) internal {
+  function setFreeze(DataStructs.Domain storage domain, bool status) internal {
     if (status) {
-      domain.withdrawInitiated = block.timestamp;
+      domain.frozen = block.timestamp;
     } else {
-      domain.withdrawInitiated = 0;
-    }
-  }
-
-  function setCustodianLock(DataStructs.Domain storage domain, bool status) internal {
-    if (status) {
-      domain.custodianLock = block.timestamp;
-    } else {
-      domain.custodianLock = 0;
+      domain.frozen = 0;
     }
   }
 }

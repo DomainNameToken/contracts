@@ -38,8 +38,6 @@ interface IDomainTokenBase {
   event DomainFreeze(uint256 chainId, uint256 tokenId, uint256 status);
   event DomainLock(uint256 chainId, uint256 tokenId, uint256 status);
 
-  function getTokenIdByName(string memory) external view returns (uint256);
-
   function getDomainInfo(uint256) external view returns (DataStructs.Domain memory);
 
   function setFreeze(uint256, bool) external;
@@ -47,4 +45,8 @@ interface IDomainTokenBase {
   function setLock(uint256, bool) external;
 
   function setCustodian(address) external;
+
+  function isLocked(uint256) external view returns (bool);
+
+  function isFrozen(uint256) external view returns (bool);
 }

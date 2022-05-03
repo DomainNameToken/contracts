@@ -188,15 +188,11 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
     return domains[tokenId];
   }
 
-  function getTokenIdByName(string memory domainName) external pure override returns (uint256) {
-    return Domain.domainNameToId(domainName);
-  }
-
-  function isLocked(uint256 tokenId) external view returns (bool) {
+  function isLocked(uint256 tokenId) external view override returns (bool) {
     return !domains[tokenId].isNotLocked();
   }
 
-  function isFrozen(uint256 tokenId) external view returns (bool) {
+  function isFrozen(uint256 tokenId) external view override returns (bool) {
     return !domains[tokenId].isNotFrozen();
   }
 }

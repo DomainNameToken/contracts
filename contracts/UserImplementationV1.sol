@@ -25,7 +25,7 @@ contract UserImplementationV1 is IUser, Destroyable, Initializable {
  }
 
  function activateUser(address user) external override onlyOwner {
-  registerUser();
+  registerUser(user);
   if (!activeUsers.contains(uint256(uint160(user)))) {
    activeUsers.set(uint256(uint160(user)), user);
    emit UserActivated(user);

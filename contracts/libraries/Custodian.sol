@@ -13,6 +13,7 @@ library CustodianLib {
   string name;
   string baseUrl;
   IUser users;
+  EnumerableMap.UintToAddressMap operators;
  }
 
  function setName(Custodian storage custodian, string memory name) internal {

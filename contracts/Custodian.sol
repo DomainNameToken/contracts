@@ -42,7 +42,7 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
   return custodian.baseUrl;
  }
 
- function users() view returns (IUser) {
+ function users() external view override returns (IUser) {
   return custodian.users;
  }
 
@@ -78,7 +78,7 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
   return custodian.checkSignature(messageHash, signature);
  }
 
- function _nonce(bytes32 group) external view returns (uint256) {
+ function _nonce(bytes32 group) external view override returns (uint256) {
   return _nonces[group];
  }
 
@@ -104,6 +104,7 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
  function externalCall(address _contract, bytes memory data)
   external
   payable
+  override
   onlyOperator
   returns (bytes memory)
  {
@@ -118,7 +119,7 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
   address _contract,
   bytes memory data,
   bytes memory signature,
-  uint256 signatureNonceGroup,
+  bytes32 signatureNonceGroup,
   uint256 signatureNonce
  ) internal view returns (bool) {
   if (_nonces[signatureNonceGroup] < signatureNonce) {
@@ -133,14 +134,10 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
   address _contract,
   bytes memory data,
   bytes memory signature,
-  uint256 signatureNonceGroup,
+  bytes32 signatureNonceGroup,
   uint256 signatureNonce
- ) external payable returns (bytes memory) {
-  if (
-   !checkExternalCallPermit(
-    externalCallEncode(_contract, data, signature, signatureNonceGroup, signatureNonce)
-   )
-  ) {
+ ) external payable override returns (bytes memory) {
+  if (!checkExternalCallPermit(_contract, data, signature, signatureNonceGroup, signatureNonce)) {
    revert("Unable to check call signature");
   }
   (bool success, bytes memory response) = _contract.call{value: msg.value}(data);

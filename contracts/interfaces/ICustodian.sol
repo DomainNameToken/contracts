@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IUser} from "./IUser.sol";
+
 interface ICustodian {
  event OperatorAdded(address indexed operator);
  event OperatorRemoved(address indexed operator);
 
- function getOwner() external view returns (address);
-
- function setCustodianInfo(string memory, string memory) external;
+ function setCustodianInfo(
+  string memory,
+  string memory,
+  address
+ ) external;
 
  function name() external view returns (string memory);
 
@@ -22,4 +26,18 @@ interface ICustodian {
  function isOperator(address) external view returns (bool);
 
  function checkSignature(bytes32, bytes memory) external view returns (bool);
+
+ function users() external view returns (IUser);
+
+ function _nonce(bytes32) external view returns (uint256);
+
+ function externalCall(address, bytes memory) external payable returns (bytes memory);
+
+ function externalCallWithPermit(
+  address _contract,
+  bytes memory data,
+  bytes memory signature,
+  bytes32 signatureNonceGroup,
+  uint256 signatureNonce
+ ) external payable returns (bytes memory);
 }

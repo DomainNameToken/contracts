@@ -8,7 +8,9 @@
     "ganache": "node ./scripts/start-ganache.js",
     "init-solhint": "./node_modules/.bin/solhint init-config",
     "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol contracts/*.sol",
-    "prettier:solidity": "./node_modules/.bin/prettier --write contracts/**/*.sol",
+    "prettier:solidity": "./node_modules/.bin/prettier --write contracts/**/*.sol contracts/*.sol",
+    "compile": "./node_modules/hardhat/internal/cli/cli.js compile ",
+    "force-compile": "./node_modules/hardhat/internal/cli/cli.js compile --force",
     "test": "./node_modules/hardhat/internal/cli/cli.js test"
   },
   "repository": {

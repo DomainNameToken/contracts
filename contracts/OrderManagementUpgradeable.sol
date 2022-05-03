@@ -5,9 +5,9 @@ import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transpa
 import {Destroyable} from "./Destroyable.sol";
 
 contract OrderManagementUpgradeable is TransparentUpgradeableProxy, Destroyable {
- constructor(
-  address _logic,
-  address _admin,
-  bytes memory _data
- ) TransparentUpgradeableProxy(_logic, _admin, _data) {}
+  constructor(
+    address _logic,
+    address _admin,
+    bytes memory _data
+  ) TransparentUpgradeableProxy(_logic, _admin, _data) {}
 }

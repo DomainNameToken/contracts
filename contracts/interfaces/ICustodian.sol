@@ -4,40 +4,40 @@ pragma solidity ^0.8.0;
 import {IUser} from "./IUser.sol";
 
 interface ICustodian {
- event OperatorAdded(address indexed operator);
- event OperatorRemoved(address indexed operator);
+  event OperatorAdded(address indexed operator);
+  event OperatorRemoved(address indexed operator);
 
- function setCustodianInfo(
-  string memory,
-  string memory,
-  address
- ) external;
+  function setCustodianInfo(
+    string memory,
+    string memory,
+    address
+  ) external;
 
- function name() external view returns (string memory);
+  function name() external view returns (string memory);
 
- function baseUrl() external view returns (string memory);
+  function baseUrl() external view returns (string memory);
 
- function addOperator(address) external;
+  function addOperator(address) external;
 
- function removeOperator(address) external;
+  function removeOperator(address) external;
 
- function getOperators() external returns (address[] memory);
+  function getOperators() external returns (address[] memory);
 
- function isOperator(address) external view returns (bool);
+  function isOperator(address) external view returns (bool);
 
- function checkSignature(bytes32, bytes memory) external view returns (bool);
+  function checkSignature(bytes32, bytes memory) external view returns (bool);
 
- function users() external view returns (IUser);
+  function users() external view returns (IUser);
 
- function _nonce(bytes32) external view returns (uint256);
+  function _nonce(bytes32) external view returns (uint256);
 
- function externalCall(address, bytes memory) external payable returns (bytes memory);
+  function externalCall(address, bytes memory) external payable returns (bytes memory);
 
- function externalCallWithPermit(
-  address _contract,
-  bytes memory data,
-  bytes memory signature,
-  bytes32 signatureNonceGroup,
-  uint256 signatureNonce
- ) external payable returns (bytes memory);
+  function externalCallWithPermit(
+    address _contract,
+    bytes memory data,
+    bytes memory signature,
+    bytes32 signatureNonceGroup,
+    uint256 signatureNonce
+  ) external payable returns (bytes memory);
 }

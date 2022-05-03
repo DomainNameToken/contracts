@@ -59,28 +59,5 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
         _;
     }
 
-    function activateUser(address user) override external onlyOperator {
-        require(custodian.isRegisteredUser(user), "Not Registered");
-        custodian.activateUser(user);
-        emit UserActivated(user);
-    }
-
-    function deactivateUser(address user) override external onlyOperator {
-        custodian.deactivateUser(user);
-        emit UserDeactivated(user);
-    }
-
-    function isActiveUser(address user) override external view returns(bool) {
-        return custodian.isActiveUser(user);
-    }
-    
-    function registerUser(address user) override external onlyOperator {
-        custodian.registerUser(user);
-        emit UserRegistered(user);
-    }
-
-    function isRegisteredUser(address user) override external view returns(bool) {
-        return custodian.isRegisteredUser(user);
-    }
     
 }

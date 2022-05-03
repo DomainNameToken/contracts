@@ -45,22 +45,5 @@ library CustodianLib {
         return addresses;
     }
 
-    function registerUser(Custodian storage custodian, address user) internal {
-        custodian.registeredUsers.set(uint256(uint160(user)), user);
-    }
-
-    function isRegisteredUser(Custodian storage custodian, address user) internal view returns(bool){
-        return custodian.registeredUsers.contains(uint256(uint160(user)));
-    }
     
-    function activateUser(Custodian storage custodian, address user) internal {
-        custodian.activeUsers.set(uint256(uint160(user)), user);
-        
-    }
-    function deactivateUser(Custodian storage custodian, address user) internal {
-        custodian.activeUsers.remove(uint256(uint160(user)));
-    }
-    function isActiveUser(Custodian storage custodian, address user) internal view returns(bool){
-        return custodian.activeUsers.contains(uint256(uint160(user)));
-    }
 }

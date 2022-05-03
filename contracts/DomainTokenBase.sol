@@ -11,7 +11,7 @@ import {MintInformation} from "./libraries/MintInformation.sol";
 import {BurnInformation} from "./libraries/BurnInformation.sol";
 import {ExtensionInformation} from "./libraries/ExtensionInformation.sol";
 
-import {Domains} from "./libraries/Domain.sol";
+import {Domain} from "./libraries/Domain.sol";
 import {Destroyable} from "./Destroyable.sol";
 import {ICustodian} from "./interfaces/ICustodian.sol";
 import {IDomainTokenBase} from "./interfaces/IDomainTokenBase.sol";
@@ -19,9 +19,9 @@ import {IDomainTokenBase} from "./interfaces/IDomainTokenBase.sol";
 import {IUser} from "./interfaces/IUser.sol";
 
 contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Initializable {
-  using Domains for Domains.Domain;
+  using Domain for DataStructs.Domain;
   ICustodian public custodian;
-  mapping(uint256 => Domains.Domain) public domains;
+  mapping(uint256 => DataStructs.Domain) public domains;
   string private _name;
   string private _symbol;
   uint256 private _chainId;
@@ -91,11 +91,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
     );
   }
 
-  function mint(DataStructs.Information memory info, bytes memory signature)
-    external
-    onlyCustodian
-    returns (uint256)
-  {
+  function mint(DataStructs.Information memory info) external onlyCustodian returns (uint256) {
     require(!_exists(info.tokenId), "Token Exists");
 
     require(MintInformation.isValidInfo(info), "Is not valid info");
@@ -105,7 +101,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
 
     require(_isValidTokenId(info), "Is Not Valid Token Id");
 
-    Domains.Domain memory domain = Domains.Domain({
+    DataStructs.Domain memory domain = DataStructs.Domain({
       name: info.domainName,
       expiryTime: info.expiryTime,
       lockTime: block.timestamp,
@@ -131,10 +127,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
     return info.tokenId;
   }
 
-  function burn(DataStructs.Information memory info, bytes memory signature)
-    external
-    onlyCustodian
-  {
+  function burn(DataStructs.Information memory info) external onlyCustodian {
     require(_exists(info.tokenId), "Token does not exist");
     require(BurnInformation.isValidInfo(info), "Is not valid info");
     require(BurnInformation.isValidChainId(info, _chainId), "Is not valid chain");
@@ -217,12 +210,17 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
     _burn(tokenId);
   }
 
-  function getDomainInfo(uint256 tokenId) external view override returns (Domains.Domain memory) {
+  function getDomainInfo(uint256 tokenId)
+    external
+    view
+    override
+    returns (DataStructs.Domain memory)
+  {
     return domains[tokenId];
   }
 
   function getTokenIdByName(string memory domainName) external pure override returns (uint256) {
-    return Domains.domainNameToId(domainName);
+    return Domain.domainNameToId(domainName);
   }
 
   function isLocked(uint256 tokenId) external view returns (bool) {

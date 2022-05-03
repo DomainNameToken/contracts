@@ -19,4 +19,13 @@ library DataStructs {
     uint256 expiryTime;
     uint256 withdrawLocktime;
   }
+
+  struct Domain {
+    string name;
+    uint256 expiryTime;
+    uint256 lockTime;
+    uint256 custodianLock;
+    uint256 withdrawLocktime;
+    uint256 withdrawInitiated;
+  }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Domains} from "../libraries/Domain.sol";
+import {DataStructs} from "../libraries/DataStructs.sol";
 
 interface IDomainTokenBase {
   event DomainBurned(
@@ -45,7 +45,7 @@ interface IDomainTokenBase {
 
   function getTokenIdByName(string memory) external view returns (uint256);
 
-  function getDomainInfo(uint256) external view returns (Domains.Domain memory);
+  function getDomainInfo(uint256) external view returns (DataStructs.Domain memory);
 
   function fulfillWithdraw(uint256) external;
 

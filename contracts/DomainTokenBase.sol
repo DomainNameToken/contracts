@@ -16,8 +16,6 @@ import {Destroyable} from "./Destroyable.sol";
 import {ICustodian} from "./interfaces/ICustodian.sol";
 import {IDomainTokenBase} from "./interfaces/IDomainTokenBase.sol";
 
-import {IUser} from "./interfaces/IUser.sol";
-
 contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Initializable {
   using Domain for DataStructs.Domain;
   ICustodian public custodian;
@@ -161,7 +159,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
   ) internal view override {
     if (to != address(0) && from != address(0)) {
       require(domains[tokenId].isNotLocked(), "Domain is locked");
-      require(domains[tokenId].isNotFrozen(), "Domain is locked by custodian");
+      require(domains[tokenId].isNotFrozen(), "Domain is frozen");
       require(domains[tokenId].isNotExpired(), "Domain is expired");
     }
   }

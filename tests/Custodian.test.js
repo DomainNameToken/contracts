@@ -112,40 +112,6 @@ describe('Custodian', () => {
 
   });
 
-  it('should correctly register user', async () => {
-    await custodianGateway.addOperator(admin.address);
-
-    await custodianGateway.registerUser(otherAccounts[0].address);
-    expect(await custodianGateway.isRegisteredUser(otherAccounts[0].address)).to.equal(true);
-    
-    
-  });
-
-    it('should correctly activate user', async () => {
-    await custodianGateway.addOperator(admin.address);
-
-    await custodianGateway.registerUser(otherAccounts[0].address);
-    expect(await custodianGateway.isRegisteredUser(otherAccounts[0].address)).to.equal(true);
-
-      await custodianGateway.activateUser(otherAccounts[0].address);
-      expect(await custodianGateway.isActiveUser(otherAccounts[0].address)).to.equal(true);
-    
-    
-  });
-
-  it('should correctly deactivate user', async () => {
-    await custodianGateway.addOperator(admin.address);
-
-    await custodianGateway.registerUser(otherAccounts[0].address);
-    expect(await custodianGateway.isRegisteredUser(otherAccounts[0].address)).to.equal(true);
-
-      await custodianGateway.activateUser(otherAccounts[0].address);
-      expect(await custodianGateway.isActiveUser(otherAccounts[0].address)).to.equal(true);
-
-    await custodianGateway.deactivateUser(otherAccounts[0].address);
-      expect(await custodianGateway.isActiveUser(otherAccounts[0].address)).to.equal(false);
-    
-  });
   
   
 });

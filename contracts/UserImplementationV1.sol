@@ -13,6 +13,13 @@ contract UserImplementationV1 is IUser, Destroyable, Initializable {
   EnumerableMap.UintToAddressMap registeredUsers;
   EnumerableMap.UintToAddressMap activeUsers;
 
+  uint256 public _usersDbStartTime;
+  
+  function initialize(
+  ) public initializer {
+      _usersDbStartTime = block.timestamp;
+  }
+
   function registerUser(address user) public override onlyOwner {
     if (!registeredUsers.contains(uint256(uint160(user)))) {
       registeredUsers.set(uint256(uint160(user)), user);

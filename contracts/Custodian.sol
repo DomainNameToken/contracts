@@ -105,7 +105,7 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
     bytes32 signatureNonceGroup,
     uint256 signatureNonce
   ) internal view returns (bool) {
-    if (_nonces[signatureNonceGroup] < signatureNonce) {
+    if (_nonces[signatureNonceGroup] >= signatureNonce) {
       return false;
     }
 

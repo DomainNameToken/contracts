@@ -11,50 +11,63 @@ describe('Custodian', () => {
   let otherAccounts;
   let AdminProxy;
   let adminProxy;
-  let DomainProxy;
-  let DomainImplementation;
   let CustodianImplementation;
   let CustodianProxy;
-  let domainProxy;
-  let domainGateway;
-  let domainImplementation;
   let custodianProxy;
   let custodianImplementation;
   let custodianGateway;
+  let UserImplementation;
+  let UserProxy;
+  let userProxy;
+  let userImplementation;
+  let userGateway;
   before(async () => {
     allAccounts = await ethers.getSigners();
     [admin, ...otherAccounts] = allAccounts;
     
     CustodianProxy = await ethers.getContractFactory('CustodianUpgradeable');
     CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV1');
-
+    UserProxy = await ethers.getContractFactory('UserUpgradeable');
+    UserImplementation = await ethers.getContractFactory('UserImplementationV1');
+    
     AdminProxy = await ethers.getContractFactory('AdminProxy');
     
   });
   beforeEach(async () => {
-
-    adminProxy = await AdminProxy.deploy();
     
+    adminProxy = await AdminProxy.deploy();
 
+    userImplementation = await UserImplementation.deploy();
+    const userInitData = userImplementation.interface.encodeFunctionData('initialize()', []);
+    userProxy = await UserProxy.deploy(userImplementation.address, adminProxy.address, userInitData);
+    userGateway = userImplementation.attach(userProxy.address);
+    
     custodianImplementation = await CustodianImplementation.deploy();
 
-    const custodianInitData = custodianImplementation.interface.encodeFunctionData('initialize(string,string)', [
-      'DNT-TEST', 'http://localhost/'
+    const custodianInitData = custodianImplementation.interface.encodeFunctionData('initialize(string,string,address)', [
+      'DNT-TEST', 'http://localhost/', userGateway.address,
     ]);
 
     custodianProxy = await CustodianProxy.deploy(custodianImplementation.address, adminProxy.address, custodianInitData);
     
     custodianGateway = custodianImplementation.attach(custodianProxy.address);
     
-    
+    await userGateway.transferOwnership(custodianGateway.address);
     
   });
 
   it('should correctly deploy', async () => {
     const custodianName = await custodianGateway.name();
     const custodianBaseUrl = await custodianGateway.baseUrl();
+    const users = await custodianGateway.users();
+    
     expect(custodianName).to.equal('DNT-TEST');
-    expect(custodianBaseUrl).to.equal('http://localhost/');    
+    expect(custodianBaseUrl).to.equal('http://localhost/');
+    expect(users).to.equal(userGateway.address);
+
+    const ownerOfUser = await userGateway.owner();
+    expect(ownerOfUser).to.equal(custodianGateway.address);
+    
   });
 
   it('should correctly add and remove operator', async () => {
@@ -110,6 +123,33 @@ describe('Custodian', () => {
     const isInValid = await custodianGateway.checkSignature(messageHash, signatureNotOperator);
     expect(isInValid).to.equal(false);
 
+  });
+
+  it('should call external contract', async () => {
+    const registerUserData = userImplementation.interface.encodeFunctionData('registerUser(address)', [ otherAccounts[0].address ]);
+    await custodianGateway.addOperator(admin.address);
+    
+    await expect(custodianGateway.externalCall(userGateway.address, registerUserData))
+      .to.emit(userGateway, 'UserRegistered').withArgs(otherAccounts[0].address);
+   
+  });
+
+  it('should call external contract with permit', async () => {
+    const registerUserData = userImplementation.interface.encodeFunctionData('registerUser(address)', [ otherAccounts[0].address ]);
+    const signatureNonceGroup = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['dnt.custodian.operators.manage']));
+    const signatureNonce = 100;
+    
+    await custodianGateway.addOperator(admin.address);
+    const hash = ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(['address' , 'bytes', 'bytes32', 'uint256'],
+                                          [ userGateway.address, registerUserData, signatureNonceGroup, signatureNonce ]),
+    );
+    const signature = await admin.signMessage(ethers.utils.arrayify(hash));
+    await expect(custodianGateway.externalCallWithPermit(userGateway.address, registerUserData, signature, signatureNonceGroup, signatureNonce))
+      .to
+      .emit(userGateway, 'UserRegistered')
+      .withArgs(otherAccounts[0].address);
+    
   });
 
   

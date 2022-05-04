@@ -49,7 +49,6 @@ const hashInformation = (info) => {
     info.nonce,
     info.domainName,
     info.expiryTime || 0,
-    info.withdrawLocktime || 0,
   ];
 
   const encoded = ethers.utils.defaultAbiCoder.encode(
@@ -69,7 +68,6 @@ const hashInformation = (info) => {
       'uint256', // Nonce
       'string', // domainName
       'uint256', // expiryTime
-      'uint256',
     ],
     flattenArray(Info),
   );
@@ -98,6 +96,12 @@ describe('Domain', () => {
   let custodianProxy;
   let custodianImplementation;
   let custodianGateway;
+  let UserImplementation;
+  let UserProxy;
+  let userProxy;
+  let userImplementation;
+  let userGateway;
+
   let nonce = 1000;
   const ZEROA = ethers.constants.AddressZero;
   const now = Math.floor(Date.now() / 1000);
@@ -106,61 +110,47 @@ describe('Domain', () => {
     domainName,
     sourceOwner = ZEROA,
     destinationOwner = ZEROA,
-    expiryTime = now + 3600 * 24 * 365,
-    withdrawLocktime = now + 90 * 24 * 3600,
+    expiry = now + 3600 * 24 * 365,
   ) => {
     const block = await ethers.provider.getBlock();
     const { chainId } = await ethers.provider.getNetwork();
     const tokenId = encodeDomainToId(domainName);
 
-    nonce += 1;
     if (type == 'mint') {
       return {
         messageType: messageType(type),
         custodian: custodianGateway.address,
         tokenId,
-
         destination: {
           chainId,
           owner: destinationOwner.address ? destinationOwner.address : destinationOwner,
           blockNumber: parseInt(`${block.number}`, 10) - 1,
         },
-
         source: {
           chainId: 0,
           owner: sourceOwner.address ? sourceOwner.address : sourceOwner,
           blockNumber: 0,
         },
-
-        nonce,
         domainName,
-        expiryTime,
-        withdrawLocktime,
+        expiry,
       };
     } if (type == 'burn') {
       return {
         messageType: messageType(type),
         custodian: custodianGateway.address,
         tokenId,
-
         source: {
           chainId,
           owner: sourceOwner.address ? sourceOwner.address : sourceOwner,
           blockNumber: parseInt(`${block.number}`, 10) - 1,
-
         },
-
         destination: {
           chainId: 0,
           owner: destinationOwner.address ? destinationOwner.address : destinationOwner,
           blockNumber: 0,
-
         },
-
-        nonce,
         domainName,
-        expiryTime,
-        withdrawLocktime,
+        expiry,
       };
     } if (type == 'extension') {
       return {
@@ -181,11 +171,8 @@ describe('Domain', () => {
           blockNumber: parseInt(`${block.number}`, 10) - 1,
 
         },
-
-        nonce,
         domainName,
-        expiryTime,
-        withdrawLocktime,
+        expiry,
       };
     }
     throw new Error('unknown info type');
@@ -197,27 +184,35 @@ describe('Domain', () => {
     userAccount = otherAccounts[0];
     DomainProxy = await ethers.getContractFactory('DomainUpgradeable');
     DomainImplementation = await ethers.getContractFactory('DomainTokenBase');
-
+    
     CustodianProxy = await ethers.getContractFactory('CustodianUpgradeable');
     CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV1');
-
+    UserProxy = await ethers.getContractFactory('UserUpgradeable');
+    UserImplementation = await ethers.getContractFactory('UserImplementationV1');
+    
     AdminProxy = await ethers.getContractFactory('AdminProxy');
   });
   beforeEach(async () => {
     adminProxy = await AdminProxy.deploy();
-
+    userImplementation = await UserImplementation.deploy();
+    const userInitData = userImplementation.interface.encodeFunctionData('initialize()', []);
+    userProxy = await UserProxy.deploy(userImplementation.address, adminProxy.address, userInitData);
+    userGateway = userImplementation.attach(userProxy.address);
+    
     custodianImplementation = await CustodianImplementation.deploy();
 
-    const custodianInitData = custodianImplementation.interface.encodeFunctionData('initialize(string,string)', [
-      'DNT-TEST', 'http://localhost/',
+    const custodianInitData = custodianImplementation.interface.encodeFunctionData('initialize(string,string,address)', [
+      'DNT-TEST', 'http://localhost/', userGateway.address
     ]);
 
     custodianProxy = await CustodianProxy.deploy(custodianImplementation.address, adminProxy.address, custodianInitData);
 
     custodianGateway = custodianImplementation.attach(custodianProxy.address);
-
+    
+    await userGateway.transferOwnership(custodianGateway.address);
+    
     domainImplementation = await DomainImplementation.deploy();
-
+    
     const domainInitData = domainImplementation.interface.encodeFunctionData('initialize(address,string,string,uint256)', [
       custodianProxy.address,
       'DOMAIN', 'Domains',
@@ -227,6 +222,7 @@ describe('Domain', () => {
     domainProxy = await DomainProxy.deploy(domainImplementation.address, adminProxy.address, domainInitData);
 
     domainGateway = domainImplementation.attach(domainProxy.address);
+    
   });
 
   it('should correctly deploy', async () => {
@@ -243,9 +239,20 @@ describe('Domain', () => {
 
     const mintInfo = await generateInfo('mint', domainName, ZEROA, userAccount);
 
-    const mintInfoSignature = await admin.signMessage(ethers.utils.arrayify(hashInformation(mintInfo)));
+    const mintCallData = domainImplementation.interface.encodeFunctionData('mint((uint256,address,uint256,(uint256,address,uint256),(uint256,address,uint256),string,uint256))', [[mintInfo.messageType,mintInfo.custodian,mintInfo.tokenId,[mintInfo.destination.chainId, mintInfo.destination.owner, mintInfo.destination.blockNumber],[mintInfo.source.chainId, mintInfo.source.owner, mintInfo.source.blockNumber],mintInfo.domainName, mintInfo.expiry]]);
+    console.log(mintCallData);
+    const signatureNonceGroup = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [`dnt.custodian.domains.manage.${mintInfo.tokenId}`]));
+    const signatureNonce = 100;
+    const hash = ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(['address' , 'bytes', 'bytes32', 'uint256'],
+                                          [ domainGateway.address, mintCallData, signatureNonceGroup, signatureNonce ]),
+    );
 
-    await expect(domainGateway.mint(mintInfo, mintInfoSignature)).to.emit(domainGateway, 'DomainMinted')
+    const signature = await admin.signMessage(ethers.utils.arrayify(hash));
+    console.log(signature);
+    await expect(custodianGateway.externalCallWithPermit(domainGateway.address, mintCallData, signature, signatureNonceGroup, signatureNonce))
+      .to
+      .emit(domainGateway, 'DomainMinted')
       .withArgs(
         mintInfo.destination.chainId,
         mintInfo.tokenId,
@@ -253,8 +260,7 @@ describe('Domain', () => {
         mintInfo.destination.chainId,
         ZEROA,
         userAccount.address,
-        mintInfo.expiryTime,
-        mintInfo.withdrawLocktime,
+        mintInfo.expiry,
         'test.com',
       );
 

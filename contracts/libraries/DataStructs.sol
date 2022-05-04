@@ -14,7 +14,6 @@ library DataStructs {
     uint256 tokenId;
     Source destination;
     Source source;
-    uint256 nonce;
     string domainName;
     uint256 expiry;
   }

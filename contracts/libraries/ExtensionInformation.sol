@@ -21,7 +21,6 @@ library ExtensionInformation {
           info.source.chainId,
           info.source.owner,
           info.source.blockNumber,
-          info.nonce,
           info.domainName,
           info.expiry
         )

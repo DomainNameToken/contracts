@@ -12,8 +12,8 @@ library DataStructs {
     uint256 messageType;
     address custodian;
     uint256 tokenId;
-    Source destination;
     Source source;
+    Source destination;
     string domainName;
     uint256 expiry;
   }

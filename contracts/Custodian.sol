@@ -106,7 +106,7 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
     uint256 signatureNonce
   ) internal view returns (bool) {
     if (_nonces[signatureNonceGroup] >= signatureNonce) {
-      return false;
+        return false;
     }
 
     bytes32 hash = keccak256(abi.encode(_contract, data, signatureNonceGroup, signatureNonce));

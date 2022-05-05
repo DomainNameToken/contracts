@@ -1,86 +1,132 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import { CustodianLib } from "./libraries/Custodian.sol";
-import { ICustodian } from "./interfaces/ICustodian.sol";
-import { Destroyable } from "./Destroyable.sol";
-import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+
+import {CustodianLib} from "./libraries/Custodian.sol";
+import {ICustodian} from "./interfaces/ICustodian.sol";
+import {Destroyable} from "./Destroyable.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {IUser} from "./interfaces/IUser.sol";
+import {BytesDecoder} from "./libraries/BytesDecoder.sol";
 
 contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
-    using CustodianLib for CustodianLib.Custodian;         
-    CustodianLib.Custodian private custodian;
-    
-    constructor(){
-        
+  using CustodianLib for CustodianLib.Custodian;
+  using BytesDecoder for bytes;
+  CustodianLib.Custodian private custodian;
+  mapping(bytes32 => uint256) _nonces;
+
+  constructor() {}
+
+  function initialize(
+    string memory _name,
+    string memory _baseUrl,
+    address _users
+  ) public initializer {
+    custodian.setName(_name);
+    custodian.setBaseUrl(_baseUrl);
+    custodian.setUsers(_users);
+  }
+
+  function setCustodianInfo(
+    string memory _name,
+    string memory _baseUrl,
+    address _users
+  ) external override onlyOwner {
+    custodian.setName(_name);
+    custodian.setBaseUrl(_baseUrl);
+    custodian.setUsers(_users);
+  }
+
+  function name() external view override returns (string memory) {
+    return custodian.name;
+  }
+
+  function baseUrl() external view override returns (string memory) {
+    return custodian.baseUrl;
+  }
+
+  function users() external view override returns (IUser) {
+    return custodian.users;
+  }
+
+  modifier onlyOperator() {
+    require(msg.sender == owner() || custodian.hasOperator(msg.sender));
+    _;
+  }
+
+  function addOperator(address operator) external override onlyOwner {
+    custodian.addOperator(operator);
+    emit OperatorAdded(operator);
+  }
+
+  function removeOperator(address operator) external override onlyOwner {
+    custodian.removeOperator(operator);
+    emit OperatorRemoved(operator);
+  }
+
+  function getOperators() external view override returns (address[] memory) {
+    return custodian.getOperators();
+  }
+
+  function isOperator(address operator) external view override returns (bool) {
+    return custodian.hasOperator(operator);
+  }
+
+  function checkSignature(bytes32 messageHash, bytes memory signature)
+    external
+    view
+    override
+    returns (bool)
+  {
+    return custodian.checkSignature(messageHash, signature);
+  }
+
+  function _nonce(bytes32 group) external view override returns (uint256) {
+    return _nonces[group];
+  }
+
+  function externalCall(address _contract, bytes memory data)
+    external
+    payable
+    override
+    onlyOperator
+    returns (bytes memory)
+  {
+    (bool success, bytes memory response) = _contract.call{value: msg.value}(data);
+    if (!success) {
+      revert(response.extractRevertReason());
+    }
+    return response;
+  }
+
+  function checkExternalCallPermit(
+    address _contract,
+    bytes memory data,
+    bytes memory signature,
+    bytes32 signatureNonceGroup,
+    uint256 signatureNonce
+  ) internal view returns (bool) {
+    if (_nonces[signatureNonceGroup] >= signatureNonce) {
+        return false;
     }
 
-    function initialize(string memory _name, string memory _baseUrl) public initializer {
-        custodian.setName(_name);
-        custodian.setBaseUrl(_baseUrl);
-    }
-    
-    function setCustodianInfo(string memory _name, string memory _baseUrl) external override onlyOwner {
-        custodian.setName(_name);
-        custodian.setBaseUrl(_baseUrl);
-    }
+    bytes32 hash = keccak256(abi.encode(_contract, data, signatureNonceGroup, signatureNonce));
+    return custodian.checkSignature(hash, signature);
+  }
 
-    function getOwner() external override view returns(address) {
-        return owner();
+  function externalCallWithPermit(
+    address _contract,
+    bytes memory data,
+    bytes memory signature,
+    bytes32 signatureNonceGroup,
+    uint256 signatureNonce
+  ) external payable override returns (bytes memory) {
+    if (!checkExternalCallPermit(_contract, data, signature, signatureNonceGroup, signatureNonce)) {
+      revert("Unable to check call signature");
     }
-    
-    function name() external override view returns(string memory) {
-        return custodian.name;
+    (bool success, bytes memory response) = _contract.call{value: msg.value}(data);
+    if (!success) {
+      revert(response.extractRevertReason());
     }
-    function baseUrl() external override view returns(string memory) {
-        return custodian.baseUrl;
-    }
-    function addOperator(address operator) override external onlyOwner {
-        custodian.addOperator(operator);
-        emit OperatorAdded(operator);
-    }
-    function removeOperator(address operator) override external onlyOwner {
-        custodian.removeOperator(operator);
-        emit OperatorRemoved(operator);
-    }
-    function getOperators() override external view returns(address[] memory) {
-        return custodian.getOperators();
-    }
-    function isOperator(address operator) override external view returns(bool) {
-        return custodian.hasOperator(operator);
-    }
-    
-    function checkSignature(bytes32 messageHash, bytes memory signature) override external view returns(bool) {
-        return custodian.checkSignature(messageHash, signature);
-    }
-
-    modifier onlyOperator() {
-        require(msg.sender == owner() 
-                || custodian.hasOperator(msg.sender)
-                );
-        _;
-    }
-
-    function activateUser(address user) override external onlyOperator {
-        require(custodian.isRegisteredUser(user), "Not Registered");
-        custodian.activateUser(user);
-        emit UserActivated(user);
-    }
-
-    function deactivateUser(address user) override external onlyOperator {
-        custodian.deactivateUser(user);
-        emit UserDeactivated(user);
-    }
-
-    function isActiveUser(address user) override external view returns(bool) {
-        return custodian.isActiveUser(user);
-    }
-    
-    function registerUser(address user) override external onlyOperator {
-        custodian.registerUser(user);
-        emit UserRegistered(user);
-    }
-
-    function isRegisteredUser(address user) override external view returns(bool) {
-        return custodian.isRegisteredUser(user);
-    }
-    
+    return response;
+  }
 }

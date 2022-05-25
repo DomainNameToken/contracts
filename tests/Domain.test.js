@@ -86,10 +86,12 @@ describe('Domain', () => {
   let userAccount;
   let AdminProxy;
   let adminProxy;
-  let DomainProxy;
+
+  let UpgredeableContract;
+  
   let DomainImplementation;
   let CustodianImplementation;
-  let CustodianProxy;
+
   let domainProxy;
   let domainGateway;
   let domainImplementation;
@@ -97,6 +99,7 @@ describe('Domain', () => {
   let custodianImplementation;
   let custodianGateway;
 
+  
 
   let nonce = 1000;
   const ZEROA = ethers.constants.AddressZero;
@@ -190,10 +193,8 @@ describe('Domain', () => {
     allAccounts = await ethers.getSigners();
     [admin, ...otherAccounts] = allAccounts;
     userAccount = otherAccounts[0];
-    DomainProxy = await ethers.getContractFactory('DomainUpgradeable');
+    UpgredeableContract = await ethers.getContractFactory('UpgredeableContract');
     DomainImplementation = await ethers.getContractFactory('DomainTokenBase');
-    
-    CustodianProxy = await ethers.getContractFactory('CustodianUpgradeable');
     CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV1');
 
     
@@ -208,7 +209,7 @@ describe('Domain', () => {
       'DNT-TEST', 'http://localhost/'
     ]);
 
-    custodianProxy = await CustodianProxy.deploy(custodianImplementation.address, adminProxy.address, custodianInitData);
+    custodianProxy = await UpgredeableContract.deploy(custodianImplementation.address, adminProxy.address, custodianInitData);
 
     custodianGateway = custodianImplementation.attach(custodianProxy.address);
     
@@ -222,7 +223,7 @@ describe('Domain', () => {
       (await ethers.provider.getNetwork()).chainId,
     ]);
 
-    domainProxy = await DomainProxy.deploy(domainImplementation.address, adminProxy.address, domainInitData);
+    domainProxy = await UpgredeableContract.deploy(domainImplementation.address, adminProxy.address, domainInitData);
 
     domainGateway = domainImplementation.attach(domainProxy.address);
     

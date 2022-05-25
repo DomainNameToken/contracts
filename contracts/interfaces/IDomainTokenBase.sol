@@ -1,43 +1,55 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { Domains } from '../libraries/Domain.sol';
+import {DataStructs} from "../libraries/DataStructs.sol";
 
 interface IDomainTokenBase {
+  event DomainBurned(
+    uint256 chainId,
+    uint256 tokenId,
+    uint256 sourceChainId,
+    uint256 destinationChainId,
+    address sourceOwner,
+    address destinationOwner,
+    uint256 expiry,
+    string domainName
+  );
+  event DomainMinted(
+    uint256 chainId,
+    uint256 tokenId,
+    uint256 sourceChainId,
+    uint256 destinationChainId,
+    address sourceOwner,
+    address destinationOwner,
+    uint256 expiry,
+    string domainName
+  );
+  event DomainExtended(
+    uint256 chainId,
+    uint256 tokenId,
+    uint256 sourceChainId,
+    uint256 destinationChainId,
+    address sourceOwner,
+    address destinationOwner,
+    uint256 expiry,
+    string domainName
+  );
 
-    event DomainBurned(uint256 chainId,
-                       uint256 tokenId,
-                       uint256 sourceChainId,
-                       uint256 destinationChainId,
-                       address sourceOwner,
-                       address destinationOwner,
-                       uint256 expiryTime,
-                       string domainName);
-    event DomainMinted(uint256 chainId,
-                       uint256 tokenId,
-                       uint256 sourceChainId,
-                       uint256 destinationChainId,
-                       address sourceOwner,
-                       address destinationOwner,
-                       uint256 expiryTime,
-                       string domainName);
-    event DomainExtended(uint256 chainId,
-                         uint256 tokenId,
-                         uint256 sourceChainId,
-                         uint256 destinationChainId,
-                         address sourceOwner,
-                         address destinationOwner,
-                         uint256 expiryTime,
-                         string domainName);
-    
-    function getTokenIdByName(string memory) external view returns(uint256);
-    function getDomainInfo(uint256) external view returns(Domains.Domain memory);
-    function fulfillWithdraw(uint256) external;
-    function cancelWithdrawRequest(uint256) external;
-    function requestWithdraw(uint256) external;
-    function setCustodianLock(uint256, bool) external;
-    function setLock(uint256, bool) external;
-    function setCustodian(address) external;
+  event DomainFreeze(uint256 chainId, uint256 tokenId, uint256 status);
+  event DomainLock(uint256 chainId, uint256 tokenId, uint256 status);
+  event WithdrawRequest(uint256 chainId, uint256 tokenId);
+  
+  function getDomainInfo(uint256) external view returns (DataStructs.Domain memory);
 
+  function setFreeze(uint256, bool) external;
 
+  function setLock(uint256, bool) external;
+
+  function setCustodian(address) external;
+
+  function isLocked(uint256) external view returns (bool);
+
+  function isFrozen(uint256) external view returns (bool);
+
+  function withdraw(uint256) external;
 }

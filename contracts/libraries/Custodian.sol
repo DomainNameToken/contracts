@@ -8,9 +8,9 @@ library CustodianLib {
   using EnumerableMap for EnumerableMap.UintToAddressMap;
 
   struct Custodian {
+      uint256 chainId;
     string name;
     string baseUrl;
-
     EnumerableMap.UintToAddressMap operators;
   }
 
@@ -20,6 +20,10 @@ library CustodianLib {
 
   function setBaseUrl(Custodian storage custodian, string memory baseUrl) internal {
     custodian.baseUrl = baseUrl;
+  }
+
+  function setChainId(Custodian storage custodian, uint256 _chainId) internal {
+      custodian.chainId = _chainId;
   }
 
   function checkSignature(

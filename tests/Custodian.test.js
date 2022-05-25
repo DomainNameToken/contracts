@@ -23,7 +23,7 @@ describe('Custodian', () => {
     allAccounts = await ethers.getSigners();
     [admin, ...otherAccounts] = allAccounts;
     
-    UpgredeableContract = await ethers.getContractFactory('UpgredeableContract');
+    UpgredeableContract = await ethers.getContractFactory('UpgradeableContract');
     CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV1');
 
     AdminProxy = await ethers.getContractFactory('AdminProxy');
@@ -32,8 +32,6 @@ describe('Custodian', () => {
   beforeEach(async () => {
     
     adminProxy = await AdminProxy.deploy();
-
-    
     
     custodianImplementation = await CustodianImplementation.deploy();
 
@@ -53,7 +51,6 @@ describe('Custodian', () => {
     
     expect(custodianName).to.equal('DNT-TEST');
     expect(custodianBaseUrl).to.equal('http://localhost/');
-
     
   });
 

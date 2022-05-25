@@ -7,8 +7,7 @@ interface ICustodian {
 
   function setCustodianInfo(
     string memory,
-    string memory,
-    address
+    string memory
   ) external;
 
   function name() external view returns (string memory);

@@ -96,11 +96,7 @@ describe('Domain', () => {
   let custodianProxy;
   let custodianImplementation;
   let custodianGateway;
-  let UserImplementation;
-  let UserProxy;
-  let userProxy;
-  let userImplementation;
-  let userGateway;
+
 
   let nonce = 1000;
   const ZEROA = ethers.constants.AddressZero;
@@ -199,29 +195,24 @@ describe('Domain', () => {
     
     CustodianProxy = await ethers.getContractFactory('CustodianUpgradeable');
     CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV1');
-    UserProxy = await ethers.getContractFactory('UserUpgradeable');
-    UserImplementation = await ethers.getContractFactory('UserImplementationV1');
+
     
     AdminProxy = await ethers.getContractFactory('AdminProxy');
   });
   beforeEach(async () => {
     adminProxy = await AdminProxy.deploy();
-    userImplementation = await UserImplementation.deploy();
-    const userInitData = userImplementation.interface.encodeFunctionData('initialize()', []);
-    userProxy = await UserProxy.deploy(userImplementation.address, adminProxy.address, userInitData);
-    userGateway = userImplementation.attach(userProxy.address);
-    
+
     custodianImplementation = await CustodianImplementation.deploy();
 
-    const custodianInitData = custodianImplementation.interface.encodeFunctionData('initialize(string,string,address)', [
-      'DNT-TEST', 'http://localhost/', userGateway.address
+    const custodianInitData = custodianImplementation.interface.encodeFunctionData('initialize(string,string)', [
+      'DNT-TEST', 'http://localhost/'
     ]);
 
     custodianProxy = await CustodianProxy.deploy(custodianImplementation.address, adminProxy.address, custodianInitData);
 
     custodianGateway = custodianImplementation.attach(custodianProxy.address);
     
-    await userGateway.transferOwnership(custodianGateway.address);
+
     
     domainImplementation = await DomainImplementation.deploy();
     

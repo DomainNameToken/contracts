@@ -480,5 +480,45 @@ describe('Domain', () => {
     expect(await domainGateway.balanceOf(otherAccounts[1].address)).to.equal(1);
   });
 
+  it('should request withdraw', async () => {
+    await custodianGateway.addOperator(admin.address);
+    const domainName = 'test.com';
+    const { chainId } = await ethers.provider.getNetwork();
+    const block = await ethers.provider.getBlock();
+    const tokenId = encodeDomainToId(domainName);
+    const mintInfo = await generateInfo('mint', domainName, ZEROA, userAccount);
+    const mintCallData = encodeDomainInfoFn(domainGateway, 'mint', mintInfo);
+    
+    const signatureNonceGroup = nonceGroupId(`dnt.domains.management.${mintInfo.tokenId}`);
+    const signatureNonce = 100;
+    
+    const signature = await signCustodianExternalCall(admin, domainGateway, mintCallData, signatureNonceGroup, signatureNonce);
+    
+    await expect(custodianGateway.externalCallWithPermit(domainGateway.address, mintCallData, signature, signatureNonceGroup, signatureNonce))
+      .to
+      .emit(domainGateway, 'DomainMinted')
+      .withArgs(
+        mintInfo.destination.chainId,
+        mintInfo.tokenId,
+        0,
+        mintInfo.destination.chainId,
+        ZEROA,
+        userAccount.address,
+        mintInfo.expiry,
+        'test.com',
+      );
+
+    const exists = await domainGateway.exists(mintInfo.tokenId);
+    expect(exists).to.equal(true);
+    expect(await domainGateway.balanceOf(otherAccounts[0].address)).to.equal(1);
+
+    await expect(domainGateway.withdraw(tokenId)).revertedWith('not owner of domain');
+    await expect(domainGateway.connect(otherAccounts[0]).withdraw(tokenId)).revertedWith('Domain is locked');
+    await domainGateway.connect(otherAccounts[0]).setLock(tokenId, false);
+    await expect(domainGateway.connect(otherAccounts[0]).withdraw(tokenId)).to.emit(domainGateway, 'WithdrawRequest')
+      .withArgs(mintInfo.destination.chainId, tokenId);
+    expect(await domainGateway.isFrozen(tokenId)).to.equal(true);
+    
+  });
   
 });

@@ -2,7 +2,7 @@ require('dotenv').config();
 const convict = require('convict');
 const fs = require('fs');
 const path = require('path');
-
+const { ethers } = require('ethers');
 const lowerCaseString = {
   name: 'lowercase-string',
   validate: (val) => true,
@@ -18,8 +18,27 @@ const accountsFormat = {
   },
 };
 
+const accountsFromMnemonic = {
+  name: 'accounts-from-mnemonic',
+  validate: (val) => true,
+  coerce: (val) => {
+    const mnemonic = !val ? ethers.Wallet.createRandom().mnemonic.phrase : val;
+
+    const addressesKeys = [];
+    const ACCOUNTS_COUNT = parseInt(process.env.ACCOUNTS_COUNT || 100, 10);
+    for (let i = 0; i < ACCOUNTS_COUNT; i++) {
+      const wallet = ethers.Wallet.fromMnemonic(mnemonic, `m/44'/60'/0'/0/${i}`);
+
+      addressesKeys.push(`${wallet.privateKey}`);
+    }
+
+    return addressesKeys.filter((x) => !!x);
+  },
+};
+
 convict.addFormat(accountsFormat);
 convict.addFormat(lowerCaseString);
+convict.addFormat(accountsFromMnemonic);
 
 const config = convict({
   network: {
@@ -34,9 +53,9 @@ const config = convict({
       env: 'PROVIDER_HTTP',
     },
     accounts: {
-      format: 'accounts',
-      default: [],
-      env: 'ACCOUNTS',
+      format: 'accounts-from-mnemonic',
+      default: 'ride move coyote bird bulb rate rally library goat height artefact lion',
+      env: 'ACCOUNT_MNEMONIC',
     },
     providerHttpHardhat: {
       format: String,

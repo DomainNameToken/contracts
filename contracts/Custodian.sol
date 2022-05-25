@@ -5,7 +5,7 @@ import {CustodianLib} from "./libraries/Custodian.sol";
 import {ICustodian} from "./interfaces/ICustodian.sol";
 import {Destroyable} from "./Destroyable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import {IUser} from "./interfaces/IUser.sol";
+
 import {BytesDecoder} from "./libraries/BytesDecoder.sol";
 
 contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
@@ -18,22 +18,18 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
 
   function initialize(
     string memory _name,
-    string memory _baseUrl,
-    address _users
+    string memory _baseUrl
   ) public initializer {
     custodian.setName(_name);
     custodian.setBaseUrl(_baseUrl);
-    custodian.setUsers(_users);
   }
 
   function setCustodianInfo(
     string memory _name,
-    string memory _baseUrl,
-    address _users
+    string memory _baseUrl
   ) external override onlyOwner {
     custodian.setName(_name);
     custodian.setBaseUrl(_baseUrl);
-    custodian.setUsers(_users);
   }
 
   function name() external view override returns (string memory) {
@@ -42,10 +38,6 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
 
   function baseUrl() external view override returns (string memory) {
     return custodian.baseUrl;
-  }
-
-  function users() external view override returns (IUser) {
-    return custodian.users;
   }
 
   modifier onlyOperator() {

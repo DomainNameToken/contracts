@@ -16,13 +16,7 @@ library CustodianLib {
   function setName(Custodian storage custodian, string memory name) internal {
     custodian.name = name;
   }
-  function chainId() external view returns (uint256){
-      uint256 id;
-      assembly {
-      id := chainid()
-      }
-      return id;
-  }
+
   function setBaseUrl(Custodian storage custodian, string memory baseUrl) internal {
     custodian.baseUrl = baseUrl;
   }

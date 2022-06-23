@@ -25,32 +25,43 @@ library DataStructs {
     uint256 frozen;
   }
 
-  enum OrderType { REGISTER, TRANSFER, EXTEND }
-  enum OrderStatus { OPEN, INITIATED, SUCCESS, FAILED, REFUNDED }
+  enum OrderType {
+    REGISTER,
+    TRANSFER,
+    EXTEND
+  }
+  enum OrderStatus {
+    OPEN,
+    INITIATED,
+    SUCCESS,
+    FAILED,
+    REFUNDED
+  }
 
   struct OrderInfo {
-      address customer;
-      uint256 chainId;
-      OrderType orderType;
-      uint256 tokenId;
-      uint256 numberOfYears;
-      address paymentToken;
-      uint256 paymentAmount;
-      uint256 paymentWindow;
-      uint256 openTime;
-      uint256 openWindow;
-      uint256 nonce;
+    address customer;
+    uint256 chainId;
+    OrderType orderType;
+    uint256 tokenId;
+    uint256 numberOfYears;
+    address paymentToken;
+    uint256 paymentAmount;
+    uint256 paymentWindow;
+    uint256 requestTime;
+    uint256 openWindow;
+    uint256 nonce;
   }
-  
+
   struct Order {
-      address customer;
-      OrderType orderType;
-      OrderStatus status;
-      uint256 tokenId;
-      uint256 numberOfYears;
-      address paymentToken;
-      uint256 paymentAmount;
-      uint256 openTime;
-      uint256 openWindow;
+    uint256 id;
+    address customer;
+    OrderType orderType;
+    OrderStatus status;
+    uint256 tokenId;
+    uint256 numberOfYears;
+    address paymentToken;
+    uint256 paymentAmount;
+    uint256 openTime;
+    uint256 openWindow;
   }
 }

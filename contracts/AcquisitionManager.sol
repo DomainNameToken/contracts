@@ -10,9 +10,9 @@ import {OrderInfo} from "./libraries/OrderInfo.sol";
 import {Order} from "./libraries/Order.sol";
 
 contract AcquisitionManager is Destroyable, Initializable {
-    using OrderInfo for DataStructs.OrderInfo;
-    using Order for DataStructs.Order;
-    using Counters for Counters.Counters;
+  using OrderInfo for DataStructs.OrderInfo;
+  using Order for DataStructs.Order;
+  using Counters for Counters.Counter;
   ICustodian public custodian;
   Counters.Counter private _nextOrderId;
 
@@ -24,70 +24,143 @@ contract AcquisitionManager is Destroyable, Initializable {
   /*
     user order history
    */
-  mapping(address=>uint256[]) public userOrders;
+  mapping(address => uint256[]) public userOrders;
 
-  mapping(uint256=>DataStructs.Order) public orders;
-  
-  event OrderOpen();
-  event OrderCancel();
+  mapping(uint256 => DataStructs.Order) public orders;
+
+  event OrderOpen(
+    uint256 orderId,
+    uint256 tokenId,
+    address customer,
+    uint256 orderType,
+    uint256 numberOfYears
+  );
+  event OrderInitiated(uint256 orderId);
   event OrderFail();
   event OrderSuccess();
-  event RefundFailed(uint256 tokenId, uint256 orderId, address customer, address paymentToken, uint256 paymentAmount);
-  event RefundSuccess(uint256 tokenId, uint256 orderId, address customer, address paymentToken, uint256 paymentAmount);
+  event RefundFailed(
+    uint256 tokenId,
+    uint256 orderId,
+    address customer,
+    address paymentToken,
+    uint256 paymentAmount
+  );
+  event RefundSuccess(
+    uint256 tokenId,
+    uint256 orderId,
+    address customer,
+    address paymentToken,
+    uint256 paymentAmount
+  );
   modifier onlyCustodian() {
-      require(address(custodian) != address(0)
-              && (address(custodian) == msg.sender
-                  || custodian.isOperator(msg.sender)), "not custodian");
+    require(
+      address(custodian) != address(0) &&
+        (address(custodian) == msg.sender || custodian.isOperator(msg.sender)),
+      "not custodian"
+    );
+    _;
   }
-  
+
   function initialize(address _custodian) public initializer {
     custodian = ICustodian(_custodian);
   }
-  
-  function request(OrderInfo memory info, bytes memory signature) external payable {
+
+  function setCustodian(address _custodian) external onlyOwner {
+    custodian = ICustodian(_custodian);
+  }
+
+  function request(DataStructs.OrderInfo memory info, bytes memory signature) external payable {
     require(info.isValidRequest(custodian.chainId()), "request not valid");
     require(custodian.checkSignature(info.encodeHash(), signature), "invalid signature");
     require(info.hasPayment(), "payment not provided");
-    
-    releasePreviousInactiveOrder(info.tokenId);
 
-    require(info.takePayment(), "payment not accepted");
+    releasePreviousOrder(info.tokenId);
 
+    require(info.lockPayment(), "payment not accepted");
     require(canAddOrder(info), "invalid state");
-    //appendOrder(info);
+    addOrder(info);
+  }
+
+  function addOrder(DataStructs.OrderInfo memory info) internal {
+    _nextOrderId.increment();
+    uint256 orderId = _nextOrderId.current();
+    orders[orderId] = DataStructs.Order({
+      id: orderId,
+      customer: info.customer, // a valid OrderInfo would have customer == msg.sender
+      orderType: info.orderType,
+      status: DataStructs.OrderStatus.OPEN,
+      tokenId: info.tokenId,
+      numberOfYears: info.numberOfYears,
+      paymentToken: info.paymentToken,
+      paymentAmount: info.paymentAmount,
+      openTime: block.timestamp,
+      openWindow: info.openWindow
+    });
+    userOrders[info.customer].push(orderId);
+    book[info.tokenId] = orderId;
+    emit OrderOpen(
+      orderId,
+      info.tokenId,
+      info.customer,
+      uint256(info.orderType),
+      info.numberOfYears
+    );
+  }
+
+  function doRefund(DataStructs.Order storage order) internal {
+    if (order.canRefund()) {
+      if (!order.refund()) {
+        emit RefundFailed(
+          order.tokenId,
+          order.id,
+          order.customer,
+          order.paymentToken,
+          order.paymentAmount
+        );
+      } else {
+        emit RefundSuccess(
+          order.tokenId,
+          order.id,
+          order.customer,
+          order.paymentToken,
+          order.paymentAmount
+        );
+      }
+    }
   }
 
   function releasePreviousOrder(uint256 tokenId) internal {
-      uint256 orderId = book[tokenId];
-      if (orderId > 0) {
-          DataStructs.Order storage currentOrder = orders[orderId];
-          
-          if (currentOrder.shouldRefund()) {
-              if(!currentOrder.refund()){
-                  emit RefundFailed(tokenId, orderId, currentOrder.customer, currentOrder.paymentToken, currentOrder.paymentAmount);
-              } else {
-                  emit RefundSuccess(tokenId, orderId, currentOrder.customer, currentOrder.paymentToken, currentOrder.paymentAmount);
-              }
-          } else {
-              if(currentOrder.isInitiated()){
-                  revert("active order exists");
-              }
-          }
+    uint256 orderId = book[tokenId];
+    if (orderId > 0) {
+      DataStructs.Order storage currentOrder = orders[orderId];
+      if (!currentOrder.canRelease()) {
+        revert("active order exists");
       }
-      delete book[tokenId];
-  }
-  
-
-  function initiate(uint256 tokenId) onlyCustodian {
-      uint256 orderId = book[tokenId];
-      if(orderId > 0){
-          revert("an active order exists for this token");
-      }
+      doRefund(currentOrder);
+    }
+    delete book[tokenId];
   }
 
-  function cancel() external {}
+  function requestRefund(uint256 orderId) external {
+    require(orderId > 0, "invalid order id");
+    DataStructs.Order storage order = orders[orderId];
+    require(order.canRefund(), "not refundable");
+    require(msg.sender == order.customer, "only customer can request refund");
+    doRefund(order);
+    if (book[order.tokenId] == orderId) {
+      delete book[order.tokenId];
+    }
+  }
 
-  function success() external onlyCustodian {}
+  function initiate(uint256 orderId) external onlyCustodian {
+    DataStructs.Order storage order = orders[orderId];
+    require(order.isOpen(), "order already initiated");
+    require(book[tokenId] == orderId, "not the current active order for this token");
+    order.status = DataStructs.OrderStatus.INITIATED;
+    emit OrderInitiated(orderId);
+  }
 
-  function fail() external onlyCustodian {}
+  function success(uint256 orderId) external onlyCustodian {}
+
+  function fail(uint256 orderId, bool shouldRefund) external onlyCustodian {}
 }

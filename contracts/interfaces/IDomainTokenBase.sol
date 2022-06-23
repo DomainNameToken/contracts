@@ -38,7 +38,7 @@ interface IDomainTokenBase {
   event DomainFreeze(uint256 chainId, uint256 tokenId, uint256 status);
   event DomainLock(uint256 chainId, uint256 tokenId, uint256 status);
   event WithdrawRequest(uint256 chainId, uint256 tokenId);
-  
+
   function getDomainInfo(uint256) external view returns (DataStructs.Domain memory);
 
   function setFreeze(uint256, bool) external;

@@ -178,13 +178,13 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
   }
 
   function withdraw(uint256 tokenId) external override {
-      require(_exists(tokenId), "Domain does no exist");
-      require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
-      require(domains[tokenId].isNotLocked(), "Domain is locked");
-      require(domains[tokenId].isNotFrozen(), "Domain is frozen");
-      require(domains[tokenId].isNotExpired(), "Domain is expired");
-      domains[tokenId].setFreeze(true);
-      emit WithdrawRequest(_chainId, tokenId);
+    require(_exists(tokenId), "Domain does no exist");
+    require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
+    require(domains[tokenId].isNotLocked(), "Domain is locked");
+    require(domains[tokenId].isNotFrozen(), "Domain is frozen");
+    require(domains[tokenId].isNotExpired(), "Domain is expired");
+    domains[tokenId].setFreeze(true);
+    emit WithdrawRequest(_chainId, tokenId);
   }
 
   function getDomainInfo(uint256 tokenId)

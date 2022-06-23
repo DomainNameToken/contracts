@@ -1,4 +1,4 @@
-o// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {CustodianLib} from "./libraries/Custodian.sol";
@@ -17,17 +17,14 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
   constructor() {}
 
   function initialize(
-                      uint256 _chainId,
     string memory _name,
     string memory _baseUrl
   ) public initializer {
     custodian.setName(_name);
     custodian.setBaseUrl(_baseUrl);
-    
   }
 
   function setCustodianInfo(
-                            uint256 _chainId,
     string memory _name,
     string memory _baseUrl
   ) external override onlyOwner {
@@ -43,10 +40,10 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
     return custodian.baseUrl;
   }
 
-  function chainId() external view override returns(uint256) {
-      return custodian.chainId;
+  function chainId() external view override returns (uint256) {
+      return custodian.chainId();
   }
-  
+
   modifier onlyOperator() {
     require(msg.sender == owner() || custodian.hasOperator(msg.sender));
     _;
@@ -105,7 +102,7 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
     uint256 signatureNonce
   ) internal view returns (bool) {
     if (_nonces[signatureNonceGroup] >= signatureNonce) {
-        return false;
+      return false;
     }
 
     bytes32 hash = keccak256(abi.encode(_contract, data, signatureNonceGroup, signatureNonce));

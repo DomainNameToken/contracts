@@ -10,6 +10,7 @@ library OrderInfo {
     returns (bool)
   {
     return
+      info.tokenContract != address(0) &&
       info.customer == msg.sender &&
       info.chainId > 0 &&
       info.chainId == chainId &&
@@ -23,6 +24,7 @@ library OrderInfo {
     return
       keccak256(
         abi.encode(
+          info.tokenContract,
           info.customer,
           info.chainId,
           uint256(info.orderType),
@@ -39,7 +41,7 @@ library OrderInfo {
   }
 
   function inPaymentWindow(DataStructs.OrderInfo memory info) internal view returns (bool) {
-    return info.openTime + info.paymentWindow > block.timestamp;
+    return info.requestTime + info.paymentWindow > block.timestamp;
   }
 
   function hasPayment(DataStructs.OrderInfo memory info) internal view returns (bool) {

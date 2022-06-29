@@ -54,4 +54,30 @@ library Order {
       }
     }
   }
+
+  function takePayment(DataStructs.Order storage order, address fundsDestination)
+    internal
+    returns (bool)
+  {
+    if (order.settled > 0) {
+      return false;
+    }
+    if (order.paymentToken == address(0)) {
+      if (address(this).balance >= order.paymentAmount) {
+        order.settled = block.timestamp;
+        (bool success, ) = fundsDestination.call{value: order.paymentAmount}("");
+        return success;
+      } else {
+        return false;
+      }
+    } else {
+      if (IERC20(order.paymentToken).balanceOf(address(this)) >= order.paymentAmount) {
+        order.settled = block.timestamp;
+        IERC20(order.paymentToken).transfer(order.customer, order.paymentAmount);
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
 }

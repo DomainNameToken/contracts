@@ -39,6 +39,7 @@ library DataStructs {
   }
 
   struct OrderInfo {
+    address tokenContract;
     address customer;
     uint256 chainId;
     OrderType orderType;
@@ -54,6 +55,7 @@ library DataStructs {
 
   struct Order {
     uint256 id;
+    address tokenContract;
     address customer;
     OrderType orderType;
     OrderStatus status;
@@ -63,5 +65,6 @@ library DataStructs {
     uint256 paymentAmount;
     uint256 openTime;
     uint256 openWindow;
+    uint256 settled;
   }
 }

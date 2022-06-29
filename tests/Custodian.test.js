@@ -11,17 +11,19 @@ describe('Custodian', () => {
   let otherAccounts;
   let AdminProxy;
   let adminProxy;
+  
   let CustodianImplementation;
-  let CustodianProxy;
   let custodianProxy;
   let custodianImplementation;
   let custodianGateway;
 
+  let UpgredeableContract;
+  
   before(async () => {
     allAccounts = await ethers.getSigners();
     [admin, ...otherAccounts] = allAccounts;
     
-    CustodianProxy = await ethers.getContractFactory('CustodianUpgradeable');
+    UpgredeableContract = await ethers.getContractFactory('UpgradeableContract');
     CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV1');
 
     AdminProxy = await ethers.getContractFactory('AdminProxy');
@@ -30,8 +32,6 @@ describe('Custodian', () => {
   beforeEach(async () => {
     
     adminProxy = await AdminProxy.deploy();
-
-    
     
     custodianImplementation = await CustodianImplementation.deploy();
 
@@ -39,7 +39,7 @@ describe('Custodian', () => {
       'DNT-TEST', 'http://localhost/',
     ]);
 
-    custodianProxy = await CustodianProxy.deploy(custodianImplementation.address, adminProxy.address, custodianInitData);
+    custodianProxy = await UpgredeableContract.deploy(custodianImplementation.address, adminProxy.address, custodianInitData);
     
     custodianGateway = custodianImplementation.attach(custodianProxy.address);
     
@@ -51,7 +51,6 @@ describe('Custodian', () => {
     
     expect(custodianName).to.equal('DNT-TEST');
     expect(custodianBaseUrl).to.equal('http://localhost/');
-
     
   });
 

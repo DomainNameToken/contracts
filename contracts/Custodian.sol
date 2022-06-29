@@ -16,18 +16,16 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
 
   constructor() {}
 
-  function initialize(
-    string memory _name,
-    string memory _baseUrl
-  ) public initializer {
+  function initialize(string memory _name, string memory _baseUrl) public initializer {
     custodian.setName(_name);
     custodian.setBaseUrl(_baseUrl);
   }
 
-  function setCustodianInfo(
-    string memory _name,
-    string memory _baseUrl
-  ) external override onlyOwner {
+  function setCustodianInfo(string memory _name, string memory _baseUrl)
+    external
+    override
+    onlyOwner
+  {
     custodian.setName(_name);
     custodian.setBaseUrl(_baseUrl);
   }
@@ -38,6 +36,14 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
 
   function baseUrl() external view override returns (string memory) {
     return custodian.baseUrl;
+  }
+
+  function chainId() external view override returns (uint256) {
+    uint256 id;
+    assembly {
+      id := chainid()
+    }
+    return id;
   }
 
   modifier onlyOperator() {
@@ -98,7 +104,7 @@ contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
     uint256 signatureNonce
   ) internal view returns (bool) {
     if (_nonces[signatureNonceGroup] >= signatureNonce) {
-        return false;
+      return false;
     }
 
     bytes32 hash = keccak256(abi.encode(_contract, data, signatureNonceGroup, signatureNonce));

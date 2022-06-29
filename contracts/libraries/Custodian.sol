@@ -10,7 +10,6 @@ library CustodianLib {
   struct Custodian {
     string name;
     string baseUrl;
-
     EnumerableMap.UintToAddressMap operators;
   }
 

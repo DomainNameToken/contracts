@@ -5,14 +5,13 @@ interface ICustodian {
   event OperatorAdded(address indexed operator);
   event OperatorRemoved(address indexed operator);
 
-  function setCustodianInfo(
-    string memory,
-    string memory
-  ) external;
+  function setCustodianInfo(string memory, string memory) external;
 
   function name() external view returns (string memory);
 
   function baseUrl() external view returns (string memory);
+
+  function chainId() external view returns (uint256);
 
   function addOperator(address) external;
 

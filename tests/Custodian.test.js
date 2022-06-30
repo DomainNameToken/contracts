@@ -16,7 +16,8 @@ describe('Custodian', () => {
   let custodianProxy;
   let custodianImplementation;
   let custodianGateway;
-
+  let externalCallTestContract;
+  let ExternalCallContract;
   let UpgredeableContract;
   
   before(async () => {
@@ -27,6 +28,7 @@ describe('Custodian', () => {
     CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV1');
 
     AdminProxy = await ethers.getContractFactory('AdminProxy');
+    ExternalCallContract = await ethers.getContractFactory('ExternalTest');
     
   });
   beforeEach(async () => {
@@ -42,7 +44,8 @@ describe('Custodian', () => {
     custodianProxy = await UpgredeableContract.deploy(custodianImplementation.address, adminProxy.address, custodianInitData);
     
     custodianGateway = custodianImplementation.attach(custodianProxy.address);
-    
+
+    externalCallTestContract = await ExternalCallContract.deploy();
   });
 
   it('should correctly deploy', async () => {
@@ -109,18 +112,53 @@ describe('Custodian', () => {
 
   });
 
-  it.skip('should call external contract', async () => {
-   /*
-      const registerUserData = userImplementation.interface.encodeFunctionData('registerUser(address)', [ otherAccounts[0].address ]);
+  it('should call external contract', async () => {
+   
+    
     await custodianGateway.addOperator(admin.address);
     
-    await expect(custodianGateway.externalCall(userGateway.address, registerUserData))
-      .to.emit(userGateway, 'UserRegistered').withArgs(otherAccounts[0].address);
+
+    
+    const externalCallData = externalCallTestContract.interface.encodeFunctionData('externalCallTest()', []);
+    
+    await expect(custodianGateway.externalCall(externalCallTestContract.address, externalCallData))
+      .to.emit(externalCallTestContract, 'ExternalCallReceived')
+      .withArgs(custodianGateway.address);
+    
+    //await expect(custodianGateway.externalCall(userGateway.address, registerUserData))
+    //  .to.emit(userGateway, 'UserRegistered').withArgs(otherAccounts[0].address);
    
-*/
+
   });
 
-  it.skip('should call external contract with permit', async () => {
+  it('should call external contract with permit', async () => {
+
+    await custodianGateway.addOperator(admin.address);
+    
+    const signatureNonceGroup = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['external.call.test']));
+    const signatureNonce = 100;
+    const externalCallData = externalCallTestContract.interface.encodeFunctionData('externalCallTest()', []);
+
+    const hash = ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(['address' , 'bytes', 'bytes32', 'uint256'],
+                                          [ externalCallTestContract.address,
+                                            externalCallData,
+                                            signatureNonceGroup,
+                                            signatureNonce
+                                          ]),
+    );
+    const signature = await admin.signMessage(ethers.utils.arrayify(hash));
+    
+    await expect(custodianGateway.externalCallWithPermit(externalCallTestContract.address, externalCallData,
+                                                         signature,
+                                                         signatureNonceGroup,
+                                                        signatureNonce))
+      .to.emit(externalCallTestContract, 'ExternalCallReceived')
+      .withArgs(custodianGateway.address);
+    
+
+
+    
     /*
       const registerUserData = userImplementation.interface.encodeFunctionData('registerUser(address)', [ otherAccounts[0].address ]);
     const signatureNonceGroup = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['dnt.custodian.operators.manage']));

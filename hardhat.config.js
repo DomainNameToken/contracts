@@ -30,7 +30,7 @@ const configuration = {
       [network]: {
         url: providerUrl,
         accounts: privateKeys,
-        chainId: 1337,
+
       },
     }
     ),

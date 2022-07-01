@@ -196,4 +196,44 @@ describe('AcquisitionManager', () => {
     const domainInfo = await domainImplementation.getDomainInfo(info.tokenId);
     expect(domainInfo.name).to.equal(testDomainName);
   });
+  it('should correctly mark order as FAILED', async () => {
+    nonce += 1;
+    const info = {
+      tokenContract: domainImplementation.address,
+      customer: allAccounts[2].address,
+      chainId: (await ethers.provider.getNetwork()).chainId,
+      orderType: 2, // register
+      tokenId: encodeDomainToId(testDomainName),
+      numberOfYears: 1,
+      paymentToken: ZEROA,
+      paymentAmount: ethers.utils.parseUnits('0.01', 18),
+      paymentWindow: 15 * 60,
+      requestTime: now(),
+      openWindow: 24 * 3600,
+      nonce,
+    };
+    const hash = hashOrderInformation(info);
+    const signature = await admin.signMessage(ethers.utils.arrayify(hash));
+    await expect(acquisitionManager.connect(allAccounts[2]).request(info, signature, { value: info.paymentAmount }))
+      .to
+      .emit(acquisitionManager, 'OrderOpen(uint256,uint256,address,uint256,uint256)')
+      .withArgs(1, info.tokenId, info.customer, info.orderType, info.numberOfYears);
+    const expectedActiveOrderId = 1;
+    expect(await acquisitionManager.book(info.tokenId)).to.equal(1);
+    let order = await acquisitionManager.orders(1);
+    expect(order.tokenId).to.equal(info.tokenId);
+    await expect(acquisitionManager.initiate(1))
+      .to
+      .emit(acquisitionManager, 'OrderInitiated(uint256)')
+      .withArgs(1);
+    order = await acquisitionManager.orders(1);
+    expect(order.status).to.equal(1);
+
+    await expect(acquisitionManager.fail(1, false))
+      .to
+      .emit(acquisitionManager, 'OrderFail(uint256)')
+      .withArgs(1);
+    order = await acquisitionManager.orders(1);
+    expect(order.status).to.equal(3); // expect status == FAILED
+  });
 });

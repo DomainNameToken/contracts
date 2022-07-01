@@ -225,5 +225,6 @@ contract AcquisitionManager is Destroyable, Initializable {
     if (book[order.tokenId] == orderId) {
       delete book[order.tokenId];
     }
+    emit OrderFail(orderId);
   }
 }

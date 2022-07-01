@@ -1,7 +1,7 @@
 require('@nomiclabs/hardhat-ethers');
 require('@nomiclabs/hardhat-etherscan');
 require('@nomiclabs/hardhat-waffle');
-
+require('solidity-coverage');
 const config = require('./config');
 
 const network = config.get('network.name');
@@ -30,6 +30,7 @@ const configuration = {
       [network]: {
         url: providerUrl,
         accounts: privateKeys,
+
       },
     }
     ),
@@ -61,8 +62,9 @@ const configuration = {
   etherscan: {
     apiKey: config.get('etherscan.apiKey'),
   },
+  plugins: ['solidity-coverage'],
 };
 
-//console.log(configuration);
+// console.log(configuration);
 
 module.exports = configuration;

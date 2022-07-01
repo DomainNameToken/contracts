@@ -65,10 +65,9 @@ describe('Domain', () => {
 
     domainImplementation = await DomainImplementation.deploy();
 
-    const domainInitData = domainImplementation.interface.encodeFunctionData('initialize(address,string,string,uint256)', [
+    const domainInitData = domainImplementation.interface.encodeFunctionData('initialize(address,string,string)', [
       custodianProxy.address,
       'DOMAIN', 'Domains',
-      (await ethers.provider.getNetwork()).chainId,
     ]);
 
     domainProxy = await UpgradeableContract.deploy(domainImplementation.address, adminProxy.address, domainInitData);

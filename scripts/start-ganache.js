@@ -45,6 +45,12 @@ const startGanache = () => {
     port: GANACHE_PORT,
     db_path: './ganache-db',
     default_balance_ether: 10000000,
+    chain: {
+      chainId: 1337,
+      networkId: 1337,
+    },
+    _chainId: 1337,
+    network_id: 1337,
   });
 
   server.listen(GANACHE_PORT, (err, blockchain) => {

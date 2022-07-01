@@ -30,6 +30,7 @@ const configuration = {
       [network]: {
         url: providerUrl,
         accounts: privateKeys,
+        chainId: 1337,
       },
     }
     ),
@@ -61,9 +62,9 @@ const configuration = {
   etherscan: {
     apiKey: config.get('etherscan.apiKey'),
   },
-  plugins: ['solidity-coverage']
+  plugins: ['solidity-coverage'],
 };
 
-//console.log(configuration);
+// console.log(configuration);
 
 module.exports = configuration;

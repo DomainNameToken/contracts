@@ -24,6 +24,40 @@ const messageType = (type) => {
   return x;
 };
 
+const hashOrderInformation = (info) => {
+  const i = [
+    info.tokenContract,
+    info.customer,
+    info.chainId,
+    info.orderType,
+    info.tokenId,
+    info.numberOfYears,
+    info.paymentToken,
+    info.paymentAmount,
+    info.paymentWindow,
+    info.requestTime,
+    info.openWindow,
+    info.nonce,
+  ];
+  const encoded = ethers.utils.defaultAbiCoder.encode([
+    'address', // tokenContract
+    'address', // customer
+    'uint256', // chainId
+    'uint256', // orderType
+    'uint256', // tokenId
+    'uint256', // numberOfYears
+    'address', // paymentToken
+    'uint256', // paymentAmount
+    'uint256', // paymentWindow
+    'uint256', // requestTime
+    'uint256', // openWindow
+    'uint256', // nonce
+  ], i);
+  return ethers.utils.keccak256(
+    encoded,
+  );
+};
+
 const hashInformation = (info) => {
   const Info = [
     info.messageType || messageType('invalid'),
@@ -170,4 +204,5 @@ module.exports = {
   messageType,
   encodeDomainToId,
   now,
+  hashOrderInformation,
 };

@@ -22,20 +22,17 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
   mapping(uint256 => DataStructs.Domain) public domains;
   string private _name;
   string private _symbol;
-  uint256 private _chainId;
 
   constructor() ERC721Enumerable() ERC721("DOMAIN", "Domains") {}
 
   function initialize(
     address custodian_,
     string memory symbol_,
-    string memory name_,
-    uint256 chainId_
+    string memory name_
   ) public initializer {
     custodian = ICustodian(custodian_);
     _name = name_;
     _symbol = symbol_;
-    _chainId = chainId_;
   }
 
   function _baseURI() internal view override returns (string memory) {
@@ -62,22 +59,22 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
     return _exists(tokenId);
   }
 
-  function chainId() external view returns (uint256) {
-    return _chainId;
+  function chainId() public view returns (uint256) {
+      return custodian.chainId();
   }
 
   function extend(DataStructs.Information memory info) external onlyCustodian {
     require(_exists(info.tokenId), "Token does not exist");
 
     require(ExtensionInformation.isValidInfo(info), "Is not valid info");
-    require(ExtensionInformation.isValidChainId(info, _chainId), "Is not valid chain");
+    require(ExtensionInformation.isValidChainId(info, chainId()), "Is not valid chain");
 
     require(ExtensionInformation.isValidBlock(info), "Is Not Valid Block");
 
     domains[info.tokenId].updateExpiry(info.expiry);
 
     emit DomainExtended(
-      _chainId,
+      chainId(),
       info.tokenId,
       info.source.chainId,
       info.destination.chainId,
@@ -92,7 +89,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
     require(!_exists(info.tokenId), "Token Exists");
 
     require(MintInformation.isValidInfo(info), "Is not valid info");
-    require(MintInformation.isValidChainId(info, _chainId), "Is not valid chain");
+    require(MintInformation.isValidChainId(info, chainId()), "Is not valid chain");
 
     require(MintInformation.isValidBlock(info), "Is Not Valid Block");
 
@@ -109,7 +106,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
 
     _mint(info.destination.owner, info.tokenId);
     emit DomainMinted(
-      _chainId,
+      chainId(),
       info.tokenId,
       info.source.chainId,
       info.destination.chainId,
@@ -124,7 +121,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
   function burn(DataStructs.Information memory info) external onlyCustodian {
     require(_exists(info.tokenId), "Token does not exist");
     require(BurnInformation.isValidInfo(info), "Is not valid info");
-    require(BurnInformation.isValidChainId(info, _chainId), "Is not valid chain");
+    require(BurnInformation.isValidChainId(info, chainId()), "Is not valid chain");
 
     require(BurnInformation.isValidBlock(info), "Is Not Valid Block");
 
@@ -133,7 +130,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
     require(_isApprovedOrOwner(info.source.owner, info.tokenId), "not owner of domain"); // ??
 
     emit DomainBurned(
-      _chainId,
+      chainId(),
       info.tokenId,
       info.source.chainId,
       info.destination.chainId,
@@ -168,13 +165,13 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
     require(_exists(tokenId), "token does not exist");
     require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
     domains[tokenId].setLock(status);
-    emit DomainLock(_chainId, tokenId, domains[tokenId].locked);
+    emit DomainLock(chainId(), tokenId, domains[tokenId].locked);
   }
 
   function setFreeze(uint256 tokenId, bool status) external override onlyCustodian {
     require(_exists(tokenId), "Domain does not exist");
     domains[tokenId].setFreeze(status);
-    emit DomainFreeze(_chainId, tokenId, domains[tokenId].frozen);
+    emit DomainFreeze(chainId(), tokenId, domains[tokenId].frozen);
   }
 
   function withdraw(uint256 tokenId) external override {
@@ -184,7 +181,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
     require(domains[tokenId].isNotFrozen(), "Domain is frozen");
     require(domains[tokenId].isNotExpired(), "Domain is expired");
     domains[tokenId].setFreeze(true);
-    emit WithdrawRequest(_chainId, tokenId);
+    emit WithdrawRequest(chainId(), tokenId);
   }
 
   function getDomainInfo(uint256 tokenId)

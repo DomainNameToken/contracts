@@ -194,6 +194,94 @@ const infoEncode = (mintInfo) => {
 const encodeDomainInfoFn = (domainGateway, fn, mintInfo, domainImplementation) => domainImplementation.interface.encodeFunctionData(`${fn}((uint256,address,uint256,(uint256,address,uint256),(uint256,address,uint256),string,uint256))`, infoEncode(mintInfo));
 const nonceGroupId = (str) => ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [str]));
 
+const nextNonce = (() => {
+  const nonce = { general: 100 };
+  return (group = undefined) => {
+    if (!group) {
+      nonce.general += 1;
+      return nonce.general;
+    }
+    if (!nonce[group]) {
+      nonce[group] = 100;
+    }
+    nonce[group] += 1;
+    return nonce[group];
+  };
+})();
+
+const getAcquisitionOrderInfo = async ({
+  domainToken,
+  custodian,
+  customer,
+  orderType = 0, // registration
+  domainName = 'testdomainname.com',
+  years = 1,
+  paymentToken = ZEROA,
+  paymentAmount = ethers.utils.parseUnits('0.01', 18),
+  nonce,
+  admin,
+}) => {
+  const info = {
+    admin,
+    tokenContract: domainToken.address,
+    customer: customer.address,
+    chainId: (await ethers.provider.getNetwork()).chainId,
+    orderType,
+    numberOfYears: years,
+    paymentToken: paymentToken.address ? paymentToken.address : paymentToken,
+    paymentAmount,
+    tokenId: encodeDomainToId(domainName),
+    paymentWindow: 15 * 60,
+    requestTime: now(),
+    openWindow: 24 * 3600,
+    nonce,
+  };
+  const hash = hashOrderInformation(info);
+  const mintFn = orderType <= 1 ? 'mint' : 'extend';
+  const mintInfo = {
+    messageType: messageType(orderType <= 1 ? 'mint' : 'extend'),
+    custodian: custodian.address,
+    tokenId: info.tokenId,
+    source: {
+      chainId: (orderType <= 1 ? 0 : info.chainId),
+      owner: orderType <= 1 ? ZEROA : customer.address,
+      blockNumber: 0,
+    },
+    destination: {
+      chainId: info.chainId,
+      owner: customer.address,
+      blockNumber: 0,
+    },
+    domainName,
+    expiry: info.requestTime + info.numberOfYears * 365 * 24 * 3600,
+  };
+  const mintInfoEncoded = encodeDomainInfoFn(domainToken, mintFn, mintInfo, domainToken);
+  const signatureNonceGroup = nonceGroupId('domains.mint');
+  const signatureNonce = nextNonce(signatureNonceGroup);
+  const successHash = ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(
+      ['address', 'bytes', 'bytes32', 'uint256'],
+      [domainToken.address,
+        mintInfoEncoded,
+        signatureNonceGroup,
+        signatureNonce],
+    ),
+  );
+  const successSignature = await admin.signMessage(ethers.utils.arrayify(successHash));
+  return {
+    orderInfo: info,
+    hash,
+    signature: await admin.signMessage(ethers.utils.arrayify(hash)),
+    success: {
+      data: mintInfoEncoded,
+      signatureNonceGroup,
+      signatureNonce,
+      hash: successHash,
+      signature: successSignature,
+    },
+  };
+};
+
 module.exports = {
   encodeDomainInfoFn,
   nonceGroupId,
@@ -205,4 +293,5 @@ module.exports = {
   encodeDomainToId,
   now,
   hashOrderInformation,
+  getAcquisitionOrderInfo,
 };

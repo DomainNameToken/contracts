@@ -70,21 +70,25 @@ contract AcquisitionManager is Destroyable, Initializable {
   }
 
   function request(DataStructs.OrderInfo memory info, bytes memory signature) external payable {
-      require(info.isValidRequest(custodian.chainId()), //"request not valid"
-              "001"
-            );
-      require(custodian.checkSignature(info.encodeHash(), signature), //"invalid signature"
-              "002"
-            );
-      require(info.hasPayment(),  //"payment not provided"
-              "003"
-            );
+    require(
+      info.isValidRequest(custodian.chainId()), //"request not valid"
+      "001"
+    );
+    require(
+      custodian.checkSignature(info.encodeHash(), signature), //"invalid signature"
+      "002"
+    );
+    require(
+      info.hasPayment(), //"payment not provided"
+      "003"
+    );
 
     releasePreviousOrder(info.tokenId);
 
-    require(info.lockPayment(), //"payment not accepted"
-            "004"
-            );
+    require(
+      info.lockPayment(), //"payment not accepted"
+      "004"
+    );
     //    require(canAddOrder(info), "invalid state");
     addOrder(info);
   }
@@ -148,8 +152,7 @@ contract AcquisitionManager is Destroyable, Initializable {
     if (orderId > 0) {
       DataStructs.Order storage currentOrder = orders[orderId];
       if (!currentOrder.canRelease()) {
-          revert( //"active order exists"
-               "005");
+        revert("005"); //"active order exists"
       }
       doRefund(currentOrder);
     }
@@ -157,16 +160,19 @@ contract AcquisitionManager is Destroyable, Initializable {
   }
 
   function requestRefund(uint256 orderId) external {
-      require(orderId > 0, //"invalid order id"
-              "006"
-            );
+    require(
+      orderId > 0, //"invalid order id"
+      "006"
+    );
     DataStructs.Order storage order = orders[orderId];
-    require(order.canRefund(), //"not refundable"
-            "007"
-            );
-    require(msg.sender == order.customer, //"only customer can request refund"
-            "008"
-            );
+    require(
+      order.canRefund(), //"not refundable"
+      "007"
+    );
+    require(
+      msg.sender == order.customer, //"only customer can request refund"
+      "008"
+    );
     doRefund(order);
     if (book[order.tokenId] == orderId) {
       delete book[order.tokenId];
@@ -175,12 +181,14 @@ contract AcquisitionManager is Destroyable, Initializable {
 
   function initiate(uint256 orderId) external onlyCustodian {
     DataStructs.Order storage order = orders[orderId];
-    require(order.isOpen(), //"order already initiated"
-            "009"
-            );
-    require(book[order.tokenId] == orderId, //"not the current active order for this token"
-            "010"
-            );
+    require(
+      order.isOpen(), //"order already initiated"
+      "009"
+    );
+    require(
+      book[order.tokenId] == orderId, //"not the current active order for this token"
+      "010"
+    );
     order.status = DataStructs.OrderStatus.INITIATED;
     emit OrderInitiated(orderId);
   }
@@ -193,9 +201,10 @@ contract AcquisitionManager is Destroyable, Initializable {
     uint256 signatureNonce
   ) external onlyCustodian {
     DataStructs.Order storage order = orders[orderId];
-    require(order.isInitiated(), //"order is not initiated"
-            "011"
-            );
+    require(
+      order.isInitiated(), //"order is not initiated"
+      "011"
+    );
     order.status = DataStructs.OrderStatus.SUCCESS;
     order.takePayment(msg.sender);
     custodian.externalCallWithPermit(
@@ -213,9 +222,10 @@ contract AcquisitionManager is Destroyable, Initializable {
 
   function fail(uint256 orderId, bool shouldRefund) external onlyCustodian {
     DataStructs.Order storage order = orders[orderId];
-    require(order.isInitiated(), //"order is not initiated"
-            "012"
-            );
+    require(
+      order.isInitiated(), //"order is not initiated"
+      "012"
+    );
     order.status = DataStructs.OrderStatus.FAILED;
     if (shouldRefund) {
       doRefund(order);

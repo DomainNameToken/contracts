@@ -2,13 +2,11 @@
 pragma solidity ^0.8.0;
 
 contract ExternalTest {
+  event ExternalCallReceived(address sender);
 
-         event ExternalCallReceived(address sender);
-         constructor(){
+  constructor() {}
 
-         }
-         function externalCallTest() external {
-                  emit ExternalCallReceived(msg.sender);
-         }
-         
+  function externalCallTest() external {
+    emit ExternalCallReceived(msg.sender);
+  }
 }

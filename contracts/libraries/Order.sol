@@ -73,7 +73,7 @@ library Order {
     } else {
       if (IERC20(order.paymentToken).balanceOf(address(this)) >= order.paymentAmount) {
         order.settled = block.timestamp;
-        IERC20(order.paymentToken).transfer(order.customer, order.paymentAmount);
+        IERC20(order.paymentToken).transfer(fundsDestination, order.paymentAmount);
         return true;
       } else {
         return false;

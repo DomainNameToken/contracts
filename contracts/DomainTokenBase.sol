@@ -60,7 +60,7 @@ contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Ini
   }
 
   function chainId() public view returns (uint256) {
-      return custodian.chainId();
+    return custodian.chainId();
   }
 
   function extend(DataStructs.Information memory info) external onlyCustodian {

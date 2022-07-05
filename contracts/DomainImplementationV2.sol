@@ -16,7 +16,7 @@ import {Destroyable} from "./Destroyable.sol";
 import {ICustodian} from "./interfaces/ICustodian.sol";
 import {IDomainTokenBase} from "./interfaces/IDomainTokenBase.sol";
 
-contract DomainTokenBase is ERC721Enumerable, Destroyable, IDomainTokenBase, Initializable {
+contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomainTokenBase, Initializable {
   using Domain for DataStructs.Domain;
   ICustodian public custodian;
   mapping(uint256 => DataStructs.Domain) public domains;

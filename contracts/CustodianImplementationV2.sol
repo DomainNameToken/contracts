@@ -8,7 +8,7 @@ import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.s
 
 import {BytesDecoder} from "./libraries/BytesDecoder.sol";
 
-contract CustodianImplementationV1 is ICustodian, Destroyable, Initializable {
+contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   using CustodianLib for CustodianLib.Custodian;
   using BytesDecoder for bytes;
   CustodianLib.Custodian private custodian;

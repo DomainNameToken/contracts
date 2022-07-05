@@ -237,4 +237,5 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     }
     emit OrderFail(orderId);
   }
+
 }

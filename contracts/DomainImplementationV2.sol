@@ -22,23 +22,40 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomainTokenBa
   mapping(uint256 => DataStructs.Domain) public domains;
   string private _name;
   string private _symbol;
-
+  string private NAME_SEPARATOR = " ";
+  string private SYMBOL_SEPARATOR = "-";
   constructor() ERC721Enumerable() ERC721("DOMAIN", "Domains") {}
 
   function initialize(
     address custodian_,
     string memory symbol_,
-    string memory name_
+    string memory name_,
+    string memory nameSeparator_,
+    string memory symbolSeparator_
   ) public initializer {
     custodian = ICustodian(custodian_);
     _name = name_;
     _symbol = symbol_;
+    NAME_SEPARATOR = nameSeparator_;
+    SYMBOL_SEPARATOR = symbolSeparator_;
   }
 
   function _baseURI() internal view override returns (string memory) {
     return custodian.baseUrl();
   }
 
+  function setNameSymbolAndSeparators(
+    string memory name_,
+    string memory symbol_,
+    string memory nameSeparator_,
+    string memory symbolSeparator_
+  ) public {
+    _name = name_;
+    _symbol = symbol_;
+    NAME_SEPARATOR = nameSeparator_;
+    SYMBOL_SEPARATOR = symbolSeparator_;
+  }
+  
   function name() public view override returns (string memory) {
     return string(abi.encodePacked(custodian.name(), " ", _name));
   }

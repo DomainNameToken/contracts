@@ -69,6 +69,30 @@ const config = convict({
       env: 'TEST_BLOCK',
     },
   },
+  domain: {
+    name: {
+      format: String,
+      default: 'Domains',
+      env: 'DOMAIN_NAME',
+    },
+    symbol: {
+      format: String,
+      default: 'TESTDOMAIN',
+      env: 'DOMAIN_SYMBOL',
+    },
+  },
+  custodian: {
+    name: {
+      format: String,
+      default: 'DNT-TEST',
+      env: 'CUSTODIAN_NAME',
+    },
+    url: {
+      format: String,
+      default: 'http://localhost/token/json/',
+      env: 'CUSTODIAN_URL',
+    },
+  },
   mainNet: {
     format: String,
     default: '',

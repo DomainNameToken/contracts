@@ -4,6 +4,7 @@ const vanity = require('./vanity');
 const constructorBytes = require('./constructor-bytes');
 
 module.exports = async ({
+  name,
   deployer,
   owner,
   admin,

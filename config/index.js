@@ -3,6 +3,7 @@ const convict = require('convict');
 const fs = require('fs');
 const path = require('path');
 const { ethers } = require('ethers');
+
 const lowerCaseString = {
   name: 'lowercase-string',
   validate: (val) => true,
@@ -67,6 +68,35 @@ const config = convict({
       default: '0',
       env: 'TEST_BLOCK',
     },
+  },
+  domain: {
+    name: {
+      format: String,
+      default: 'Domains',
+      env: 'DOMAIN_NAME',
+    },
+    symbol: {
+      format: String,
+      default: 'TESTDOMAIN',
+      env: 'DOMAIN_SYMBOL',
+    },
+  },
+  custodian: {
+    name: {
+      format: String,
+      default: 'DNT-TEST',
+      env: 'CUSTODIAN_NAME',
+    },
+    url: {
+      format: String,
+      default: 'http://localhost/token/json/',
+      env: 'CUSTODIAN_URL',
+    },
+  },
+  mainNet: {
+    format: String,
+    default: '',
+    env: 'MAIN_NET',
   },
   etherscan: {
     apiKey: {

@@ -9,7 +9,7 @@ import {DataStructs} from "./libraries/DataStructs.sol";
 import {OrderInfo} from "./libraries/OrderInfo.sol";
 import {Order} from "./libraries/Order.sol";
 
-contract AcquisitionManager is Destroyable, Initializable {
+contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
   using OrderInfo for DataStructs.OrderInfo;
   using Order for DataStructs.Order;
   using Counters for Counters.Counter;
@@ -237,4 +237,5 @@ contract AcquisitionManager is Destroyable, Initializable {
     }
     emit OrderFail(orderId);
   }
+
 }

@@ -53,9 +53,9 @@ describe('AcquisitionManager', () => {
     [admin, ...otherAccounts] = allAccounts;
     userAccount = otherAccounts[2];
     // UpgradeableContract = await ethers.getContractFactory('UpgradeableContract');
-    DomainImplementation = await ethers.getContractFactory('DomainTokenBase');
-    CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV1');
-    AcquisitionManagerImplementation = await ethers.getContractFactory('AcquisitionManager');
+    DomainImplementation = await ethers.getContractFactory('DomainImplementationV2');
+    CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV2');
+    AcquisitionManagerImplementation = await ethers.getContractFactory('AcquisitionManagerImplementationV2');
     MockERC20Token = await ethers.getContractFactory('MockERC20Token');
   });
   beforeEach(async () => {

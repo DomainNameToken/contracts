@@ -38,14 +38,6 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
     return custodian.baseUrl;
   }
 
-  function chainId() external view override returns (uint256) {
-    uint256 id;
-    assembly {
-      id := chainid()
-    }
-    return id;
-  }
-
   modifier onlyOperator() {
     require(msg.sender == owner() || custodian.hasOperator(msg.sender));
     _;
@@ -66,7 +58,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   }
 
   function isOperator(address operator) external view override returns (bool) {
-    return custodian.hasOperator(operator);
+      return operator == address(this) || custodian.hasOperator(operator);
   }
 
   function checkSignature(bytes32 messageHash, bytes memory signature)

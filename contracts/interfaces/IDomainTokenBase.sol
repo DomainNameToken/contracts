@@ -5,39 +5,26 @@ import {DataStructs} from "../libraries/DataStructs.sol";
 
 interface IDomainTokenBase {
   event DomainBurned(
-    uint256 chainId,
     uint256 tokenId,
-    uint256 sourceChainId,
-    uint256 destinationChainId,
-    address sourceOwner,
-    address destinationOwner,
     uint256 expiry,
     string domainName
   );
   event DomainMinted(
-    uint256 chainId,
     uint256 tokenId,
-    uint256 sourceChainId,
-    uint256 destinationChainId,
-    address sourceOwner,
-    address destinationOwner,
+    address owner,
     uint256 expiry,
     string domainName
   );
   event DomainExtended(
-    uint256 chainId,
     uint256 tokenId,
-    uint256 sourceChainId,
-    uint256 destinationChainId,
-    address sourceOwner,
-    address destinationOwner,
+    address owner,
     uint256 expiry,
     string domainName
   );
 
-  event DomainFreeze(uint256 chainId, uint256 tokenId, uint256 status);
-  event DomainLock(uint256 chainId, uint256 tokenId, uint256 status);
-  event WithdrawRequest(uint256 chainId, uint256 tokenId);
+  event DomainFreeze(uint256 tokenId, uint256 status);
+  event DomainLock(uint256 tokenId, uint256 status);
+  event WithdrawRequest(uint256 tokenId, address owner);
 
   function getDomainInfo(uint256) external view returns (DataStructs.Domain memory);
 

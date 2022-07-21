@@ -11,8 +11,6 @@ interface ICustodian {
 
   function baseUrl() external view returns (string memory);
 
-  function chainId() external view returns (uint256);
-
   function addOperator(address) external;
 
   function removeOperator(address) external;

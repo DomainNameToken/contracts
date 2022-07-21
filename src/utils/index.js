@@ -28,7 +28,6 @@ const hashOrderInformation = (info) => {
   const i = [
     info.tokenContract,
     info.customer,
-    info.chainId,
     info.orderType,
     info.tokenId,
     info.numberOfYears,
@@ -42,7 +41,6 @@ const hashOrderInformation = (info) => {
   const encoded = ethers.utils.defaultAbiCoder.encode([
     'address', // tokenContract
     'address', // customer
-    'uint256', // chainId
     'uint256', // orderType
     'uint256', // tokenId
     'uint256', // numberOfYears
@@ -63,19 +61,7 @@ const hashInformation = (info) => {
     info.messageType || messageType('invalid'),
     info.custodian,
     info.tokenId || encodeDomainToId(info.domainName),
-
-    [
-      info.destination.chainId || 0,
-      info.destination.owner || 0,
-      info.destination.blockNumber || 0,
-    ],
-
-    [
-      info.source.chainId || 0,
-      info.source.owner || 0,
-      info.source.blockNumber || 0,
-    ],
-
+    info.owner.address ? info.owner.address : info.owner,
     info.nonce,
     info.domainName,
     info.expiryTime || 0,
@@ -86,15 +72,7 @@ const hashInformation = (info) => {
       'uint256',
       'address',
       'uint256', // token id
-
-      'uint256', // destination chain
-      'address', // destination owner
-      'uint256', // destination block
-
-      'uint256', // source chain
-      'address', // source owner
-      'uint256', // source block
-
+      'address', // owner
       'uint256', // Nonce
       'string', // domainName
       'uint256', // expiryTime
@@ -115,13 +93,11 @@ const generateInfo = async (
   custodianGateway,
   type,
   domainName,
-  sourceOwner = ZEROA,
-  destinationOwner = ZEROA,
+  owner = ZEROA,
   expiry = now() + 3600 * 24 * 365,
 
 ) => {
   const block = await ethers.provider.getBlock();
-  const { chainId } = await ethers.provider.getNetwork();
   const tokenId = encodeDomainToId(domainName);
 
   if (type == 'mint') {
@@ -129,17 +105,7 @@ const generateInfo = async (
       messageType: messageType(type),
       custodian: custodianGateway.address,
       tokenId,
-      source: {
-        chainId: 0,
-        owner: sourceOwner.address ? sourceOwner.address : sourceOwner,
-        blockNumber: 0,
-      },
-      destination: {
-        chainId,
-        owner: destinationOwner.address ? destinationOwner.address : destinationOwner,
-        blockNumber: parseInt(`${block.number}`, 10) - 1,
-      },
-
+      owner,
       domainName,
       expiry,
     };
@@ -148,16 +114,7 @@ const generateInfo = async (
       messageType: messageType(type),
       custodian: custodianGateway.address,
       tokenId,
-      source: {
-        chainId,
-        owner: sourceOwner.address ? sourceOwner.address : sourceOwner,
-        blockNumber: parseInt(`${block.number}`, 10) - 1,
-      },
-      destination: {
-        chainId: 0,
-        owner: destinationOwner.address ? destinationOwner.address : destinationOwner,
-        blockNumber: 0,
-      },
+      owner,
       domainName,
       expiry,
     };
@@ -166,20 +123,7 @@ const generateInfo = async (
       messageType: messageType(type),
       custodian: custodianGateway.address,
       tokenId,
-
-      source: {
-        chainId,
-        owner: sourceOwner.address ? sourceOwner.address : sourceOwner,
-        blockNumber: parseInt(`${block.number}`, 10) - 1,
-
-      },
-
-      destination: {
-        chainId,
-        owner: destinationOwner.address ? destinationOwner.address : destinationOwner,
-        blockNumber: parseInt(`${block.number}`, 10) - 1,
-
-      },
+      owner,
       domainName,
       expiry,
     };
@@ -187,11 +131,10 @@ const generateInfo = async (
   throw new Error('unknown info type');
 };
 const infoEncode = (mintInfo) => {
-  const i = [[mintInfo.messageType, mintInfo.custodian, mintInfo.tokenId, [mintInfo.source.chainId, mintInfo.source.owner, mintInfo.source.blockNumber], [mintInfo.destination.chainId, mintInfo.destination.owner, mintInfo.destination.blockNumber], mintInfo.domainName, mintInfo.expiry]];
-
+  const i = [[mintInfo.messageType, mintInfo.custodian, mintInfo.tokenId, mintInfo.owner.address ? mintInfo.owner.address : mintInfo.owner, mintInfo.domainName, mintInfo.expiry]];
   return i;
 };
-const encodeDomainInfoFn = (domainGateway, fn, mintInfo, domainImplementation) => domainImplementation.interface.encodeFunctionData(`${fn}((uint256,address,uint256,(uint256,address,uint256),(uint256,address,uint256),string,uint256))`, infoEncode(mintInfo));
+const encodeDomainInfoFn = (domainGateway, fn, mintInfo, domainImplementation) => domainImplementation.interface.encodeFunctionData(`${fn}((uint256,address,uint256,address,string,uint256))`, infoEncode(mintInfo));
 const nonceGroupId = (str) => ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [str]));
 
 const nextNonce = (() => {
@@ -225,7 +168,6 @@ const getAcquisitionOrderInfo = async ({
     admin,
     tokenContract: domainToken.address,
     customer: customer.address,
-    chainId: (await ethers.provider.getNetwork()).chainId,
     orderType,
     numberOfYears: years,
     paymentToken: paymentToken.address ? paymentToken.address : paymentToken,
@@ -242,16 +184,7 @@ const getAcquisitionOrderInfo = async ({
     messageType: messageType(orderType <= 1 ? 'mint' : 'extend'),
     custodian: custodian.address,
     tokenId: info.tokenId,
-    source: {
-      chainId: (orderType <= 1 ? 0 : info.chainId),
-      owner: orderType <= 1 ? ZEROA : customer.address,
-      blockNumber: 0,
-    },
-    destination: {
-      chainId: info.chainId,
-      owner: customer.address,
-      blockNumber: 0,
-    },
+    owner: customer.address,
     domainName,
     expiry: info.requestTime + info.numberOfYears * 365 * 24 * 3600,
   };

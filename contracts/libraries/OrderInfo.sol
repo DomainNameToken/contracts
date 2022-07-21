@@ -4,7 +4,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {DataStructs} from "./DataStructs.sol";
 
 library OrderInfo {
-  function isValidRequest(DataStructs.OrderInfo memory info, uint256 chainId)
+  function isValidRequest(DataStructs.OrderInfo memory info)
     internal
     view
     returns (bool)
@@ -12,8 +12,6 @@ library OrderInfo {
     return
       info.tokenContract != address(0) &&
       info.customer == msg.sender &&
-      info.chainId > 0 &&
-      info.chainId == chainId &&
       info.tokenId > 0 &&
       info.numberOfYears > 0 &&
       info.requestTime + info.openWindow > block.timestamp &&
@@ -26,7 +24,6 @@ library OrderInfo {
         abi.encode(
           info.tokenContract,
           info.customer,
-          info.chainId,
           uint256(info.orderType),
           info.tokenId,
           info.numberOfYears,

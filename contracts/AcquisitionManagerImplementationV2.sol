@@ -71,10 +71,6 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
 
   function request(DataStructs.OrderInfo memory info, bytes memory signature) external payable {
     require(
-      info.isValidRequest(custodian.chainId()), //"request not valid"
-      "001"
-    );
-    require(
       custodian.checkSignature(info.encodeHash(), signature), //"invalid signature"
       "002"
     );

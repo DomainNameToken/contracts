@@ -65,10 +65,16 @@ describe('Domain', () => {
 
     domainImplementation = await DomainImplementation.deploy();
 
-    const domainInitData = domainImplementation.interface.encodeFunctionData('initialize(address,string,string)', [
-      custodianProxy.address,
-      'DOMAIN', 'Domains',
-    ]);
+    const domainInitData = domainImplementation.interface.encodeFunctionData(
+      'initialize(address,string,string,string,string)',
+      [
+        custodianProxy.address,
+        'DOMAIN',
+        'Domains',
+        ' ',
+        '-',
+      ],
+    );
 
     domainProxy = await UpgradeableContract.deploy(domainImplementation.address, adminProxy.address, domainInitData);
 
@@ -97,7 +103,7 @@ describe('Domain', () => {
     await custodianGateway.addOperator(admin.address);
     const domainName = 'test.com';
 
-    const mintInfo = await generateInfo(custodianGateway, 'mint', domainName, ZEROA, userAccount);
+    const mintInfo = await generateInfo(custodianGateway, 'mint', domainName, userAccount);
 
     const mintCallData = encodeDomainInfoFn(domainGateway, 'mint', mintInfo, domainImplementation);
 
@@ -110,11 +116,7 @@ describe('Domain', () => {
       .to
       .emit(domainGateway, 'DomainMinted')
       .withArgs(
-        mintInfo.destination.chainId,
         mintInfo.tokenId,
-        0,
-        mintInfo.destination.chainId,
-        ZEROA,
         userAccount.address,
         mintInfo.expiry,
         'test.com',
@@ -128,7 +130,7 @@ describe('Domain', () => {
   it('should correctly burn', async () => {
     await custodianGateway.addOperator(admin.address);
     const domainName = 'test.com';
-    const mintInfo = await generateInfo(custodianGateway, 'mint', domainName, ZEROA, userAccount);
+    const mintInfo = await generateInfo(custodianGateway, 'mint', domainName, userAccount);
     const mintCallData = encodeDomainInfoFn(domainGateway, 'mint', mintInfo, domainImplementation);
 
     const signatureNonceGroup = nonceGroupId(`dnt.domains.management.${mintInfo.tokenId}`);
@@ -140,11 +142,7 @@ describe('Domain', () => {
       .to
       .emit(domainGateway, 'DomainMinted')
       .withArgs(
-        mintInfo.destination.chainId,
         mintInfo.tokenId,
-        0,
-        mintInfo.destination.chainId,
-        ZEROA,
         userAccount.address,
         mintInfo.expiry,
         'test.com',
@@ -156,7 +154,7 @@ describe('Domain', () => {
 
     await domainGateway.connect(otherAccounts[0]).setLock(mintInfo.tokenId, false);
 
-    const burnInfo = await generateInfo(custodianGateway, 'burn', domainName, userAccount.address, ZEROA);
+    const burnInfo = await generateInfo(custodianGateway, 'burn', domainName, userAccount.address);
 
     const burnCallData = encodeDomainInfoFn(domainGateway, 'burn', burnInfo, domainImplementation);
 
@@ -166,12 +164,7 @@ describe('Domain', () => {
 
     await expect(custodianGateway.externalCallWithPermit(domainGateway.address, burnCallData, burnInfoSignature, signatureNonceGroup, signatureNonceBurn)).to.emit(domainGateway, 'DomainBurned')
       .withArgs(
-        burnInfo.source.chainId,
         burnInfo.tokenId,
-        burnInfo.source.chainId,
-        0,
-        userAccount.address,
-        ZEROA,
         mintInfo.expiry,
         domainName,
       );
@@ -184,7 +177,7 @@ describe('Domain', () => {
   it('should correctly extend domain', async () => {
     await custodianGateway.addOperator(admin.address);
     const domainName = 'test.com';
-    const mintInfo = await generateInfo(custodianGateway, 'mint', domainName, ZEROA, userAccount);
+    const mintInfo = await generateInfo(custodianGateway, 'mint', domainName, userAccount);
     const mintCallData = encodeDomainInfoFn(domainGateway, 'mint', mintInfo, domainImplementation);
 
     const signatureNonceGroup = nonceGroupId(`dnt.domains.management.${mintInfo.tokenId}`);
@@ -196,11 +189,7 @@ describe('Domain', () => {
       .to
       .emit(domainGateway, 'DomainMinted')
       .withArgs(
-        mintInfo.destination.chainId,
         mintInfo.tokenId,
-        0,
-        mintInfo.destination.chainId,
-        ZEROA,
         userAccount.address,
         mintInfo.expiry,
         'test.com',
@@ -210,7 +199,7 @@ describe('Domain', () => {
     expect(exists).to.equal(true);
     expect(await domainGateway.balanceOf(otherAccounts[0].address)).to.equal(1);
 
-    const extendInfo = await generateInfo(custodianGateway, 'extension', domainName, userAccount, userAccount, mintInfo.expiry + 365 * 24 * 3600);
+    const extendInfo = await generateInfo(custodianGateway, 'extension', domainName, userAccount, mintInfo.expiry + 365 * 24 * 3600);
     const extendCallData = encodeDomainInfoFn(domainGateway, 'extend', extendInfo, domainImplementation);
     const signatureNonceExtend = 101;
 
@@ -220,11 +209,7 @@ describe('Domain', () => {
       .to
       .emit(domainGateway, 'DomainExtended')
       .withArgs(
-        extendInfo.destination.chainId,
         extendInfo.tokenId,
-        extendInfo.source.chainId,
-        extendInfo.destination.chainId,
-        otherAccounts[0].address,
         otherAccounts[0].address,
         extendInfo.expiry,
         domainName,
@@ -234,10 +219,9 @@ describe('Domain', () => {
   it('should lock and unlock', async () => {
     await custodianGateway.addOperator(admin.address);
     const domainName = 'test.com';
-    const { chainId } = await ethers.provider.getNetwork();
     const block = await ethers.provider.getBlock();
     const tokenId = encodeDomainToId(domainName);
-    const mintInfo = await generateInfo(custodianGateway, 'mint', domainName, ZEROA, userAccount);
+    const mintInfo = await generateInfo(custodianGateway, 'mint', domainName, userAccount);
     const mintCallData = encodeDomainInfoFn(domainGateway, 'mint', mintInfo, domainImplementation);
 
     const signatureNonceGroup = nonceGroupId(`dnt.domains.management.${mintInfo.tokenId}`);
@@ -249,11 +233,7 @@ describe('Domain', () => {
       .to
       .emit(domainGateway, 'DomainMinted')
       .withArgs(
-        mintInfo.destination.chainId,
         mintInfo.tokenId,
-        0,
-        mintInfo.destination.chainId,
-        ZEROA,
         userAccount.address,
         mintInfo.expiry,
         'test.com',
@@ -278,10 +258,9 @@ describe('Domain', () => {
   it('should throw when transfering a locked token', async () => {
     await custodianGateway.addOperator(admin.address);
     const domainName = 'test.com';
-    const { chainId } = await ethers.provider.getNetwork();
     const block = await ethers.provider.getBlock();
     const tokenId = encodeDomainToId(domainName);
-    const mintInfo = await generateInfo(custodianGateway, 'mint', domainName, ZEROA, userAccount);
+    const mintInfo = await generateInfo(custodianGateway, 'mint', domainName, userAccount);
     const mintCallData = encodeDomainInfoFn(domainGateway, 'mint', mintInfo, domainImplementation);
 
     const signatureNonceGroup = nonceGroupId(`dnt.domains.management.${mintInfo.tokenId}`);
@@ -293,11 +272,7 @@ describe('Domain', () => {
       .to
       .emit(domainGateway, 'DomainMinted')
       .withArgs(
-        mintInfo.destination.chainId,
         mintInfo.tokenId,
-        0,
-        mintInfo.destination.chainId,
-        ZEROA,
         userAccount.address,
         mintInfo.expiry,
         'test.com',
@@ -319,10 +294,10 @@ describe('Domain', () => {
   it('should request withdraw', async () => {
     await custodianGateway.addOperator(admin.address);
     const domainName = 'test.com';
-    const { chainId } = await ethers.provider.getNetwork();
+
     const block = await ethers.provider.getBlock();
     const tokenId = encodeDomainToId(domainName);
-    const mintInfo = await generateInfo(custodianGateway, 'mint', domainName, ZEROA, userAccount);
+    const mintInfo = await generateInfo(custodianGateway, 'mint', domainName, userAccount);
     const mintCallData = encodeDomainInfoFn(domainGateway, 'mint', mintInfo, domainImplementation);
 
     const signatureNonceGroup = nonceGroupId(`dnt.domains.management.${mintInfo.tokenId}`);
@@ -334,11 +309,7 @@ describe('Domain', () => {
       .to
       .emit(domainGateway, 'DomainMinted')
       .withArgs(
-        mintInfo.destination.chainId,
         mintInfo.tokenId,
-        0,
-        mintInfo.destination.chainId,
-        ZEROA,
         userAccount.address,
         mintInfo.expiry,
         'test.com',
@@ -352,7 +323,7 @@ describe('Domain', () => {
     await expect(domainGateway.connect(otherAccounts[0]).withdraw(tokenId)).revertedWith('Domain is locked');
     await domainGateway.connect(otherAccounts[0]).setLock(tokenId, false);
     await expect(domainGateway.connect(otherAccounts[0]).withdraw(tokenId)).to.emit(domainGateway, 'WithdrawRequest')
-      .withArgs(mintInfo.destination.chainId, tokenId);
+      .withArgs(tokenId, userAccount.address);
     expect(await domainGateway.isFrozen(tokenId)).to.equal(true);
   });
 });

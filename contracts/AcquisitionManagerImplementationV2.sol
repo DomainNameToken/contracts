@@ -3,8 +3,12 @@ pragma solidity ^0.8.0;
 
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
+import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {Destroyable} from "./Destroyable.sol";
 import {ICustodian} from "./interfaces/ICustodian.sol";
+import {IDomain} from "./interfaces/IDomain.sol";
 import {DataStructs} from "./libraries/DataStructs.sol";
 import {OrderInfo} from "./libraries/OrderInfo.sol";
 import {Order} from "./libraries/Order.sol";
@@ -13,9 +17,11 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
   using OrderInfo for DataStructs.OrderInfo;
   using Order for DataStructs.Order;
   using Counters for Counters.Counter;
+  using EnumerableMap for EnumerableMap.AddressToUintMap;
   ICustodian public custodian;
+  IDomain public domainToken;
   Counters.Counter private _nextOrderId;
-
+  
   /*
     current order for a token
     tokenId to order id mapping
@@ -27,13 +33,19 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
   mapping(address => uint256[]) public userOrders;
 
   mapping(uint256 => DataStructs.Order) public orders;
-
+  mapping(bytes32 => uint256) public standardPrices;
+  uint256 public standardPriceDecimals;
+  EnumerableMap.AddressToUintMap private acceptedStableTokens;
+  AggregatorV3Interface public nativeChainlinkAggregator;
+  
   event OrderOpen(
     uint256 orderId,
     uint256 tokenId,
     address customer,
     uint256 orderType,
-    uint256 numberOfYears
+    uint256 numberOfYears,
+    string tld,
+    bytes orderData
   );
   event OrderInitiated(uint256 orderId);
   event OrderFail(uint256 orderId);
@@ -61,59 +73,153 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     _;
   }
 
-  function initialize(address _custodian) public initializer {
+  function initialize(address _custodian,
+                      address _domainToken,
+                      address _chainlinkNativeAggregator) public initializer {
     custodian = ICustodian(_custodian);
+    domainToken = IDomain(_domainToken);
+    nativeChainlinkAggregator = AggregatorV3Interface(_chainlinkNativeAggregator);
   }
 
-  function setCustodian(address _custodian) external onlyOwner {
-    custodian = ICustodian(_custodian);
+  function setCustodianDomainTokenAndChainlinkAggregator(address _custodian, address _domainToken, address _aggregator) external onlyOwner {
+      if(_custodian != address(0)){
+          custodian = ICustodian(_custodian);
+      }
+      if(_domainToken != address(0)){
+          domainToken = IDomain(_domainToken);
+      }
+      if(_aggregator != address(0)){
+          nativeChainlinkAggregator = AggregatorV3Interface(_aggregator);
+      }
   }
 
-  function request(DataStructs.OrderInfo memory info, bytes memory signature) external payable {
+  function addStableToken(address token) external onlyCustodian {
+      if(!acceptedStableTokens.contains(token)){
+          acceptedStableTokens.set(token, block.timestamp);
+      }
+  }
+
+  function removeStableToken(address token) external onlyCustodian {
+        if(acceptedStableTokens.contains(token)){
+            acceptedStableTokens.remove(token);
+        }
+  }
+  
+  function getAcceptedStableTokens() external view returns (address[] memory) {
+      uint256 length = acceptedStableTokens.length();
+      address[] memory result = new address[](length);
+      for(uint256 i = 0; i < length; i++){
+          (address token,) = acceptedStableTokens.at(i);
+          
+          result[i] = token;
+      }
+      return result;
+  }
+
+  function setStardardPrice(string[] memory _tlds, uint256[] memory prices, uint256 decimals) external onlyCustodian {
+      for(uint256 i = 0; i < _tlds.length; i++){
+          bytes32 tldKey = keccak256(abi.encode(_tlds[i]));
+          standardPrices[tldKey] = prices[i];
+      }
+      standardPriceDecimals = decimals;
+  }
+  function getStandardPrice(string memory _tld) public view returns (uint256) {
+      bytes32 tldKey = keccak256(abi.encode(_tld));
+      return standardPrices[tldKey] == 1 ? 0 : standardPrices[tldKey];
+  }
+
+  function hasStandardPrice(string memory _tld) public view returns(bool) {
+      bytes32 tldKey = keccak256(abi.encode(_tld));
+      return standardPrices[tldKey] != 0;
+  }
+
+  function getNativePrice(string memory _tld) public view returns(uint256) {
+      (,int256 iprice,,,) = nativeChainlinkAggregator.latestRoundData();
+      uint256 price = uint256(iprice);
+      uint256 aggregatorDecimals = nativeChainlinkAggregator.decimals();
+      if(price == 0){
+          revert("price not available");
+      }
+      uint256 standardPrice = getStandardPrice(_tld);
+      if(standardPrice == 0){
+          return 0;
+      }
+      if(standardPriceDecimals < aggregatorDecimals){
+          standardPrice = standardPrice * 10 ** (aggregatorDecimals - standardPriceDecimals);
+      }
+      if(standardPriceDecimals > aggregatorDecimals){
+          standardPrice = standardPrice / 10 ** (standardPriceDecimals - aggregatorDecimals);
+      }
+      return standardPrice * 10**18 / price;
+  }
+  function getStablePrice(string memory _tld, address token) public view returns(uint256){
+      uint256 standardPrice = getStandardPrice(_tld);
+      if(standardPrice == 0){
+          return 0;
+      }
+      uint256 stableTokenDecimals = IERC20Metadata(token).decimals();
+      if(standardPriceDecimals < stableTokenDecimals){
+          standardPrice = standardPrice * 10 ** (stableTokenDecimals - standardPriceDecimals);
+      }
+      if(standardPriceDecimals > stableTokenDecimals){
+          standardPrice = standardPrice / 10 ** (standardPriceDecimals - stableTokenDecimals);
+      }
+      return standardPrice;
+  }
+  
+  function request(DataStructs.OrderInfo memory info) external payable {
+      require(info.isValidRequest(address(domainToken),
+                                  address(custodian),
+                                  acceptedStableTokens), "invalid request");
+      require(hasStandardPrice(info.tld), "tld not accepted");
+      uint256 requiredPaymentAmount;
+      if(info.paymentToken == address(0)){
+          requiredPaymentAmount = getNativePrice(info.tld);
+      } else {
+          requiredPaymentAmount = getStablePrice(info.tld, info.paymentToken);
+      }
+      requiredPaymentAmount = requiredPaymentAmount * info.numberOfYears;
     require(
-      custodian.checkSignature(info.encodeHash(), signature), //"invalid signature"
-      "002"
-    );
-    require(
-      info.hasPayment(), //"payment not provided"
+      info.hasPayment(requiredPaymentAmount), //"payment not provided"
       "003"
     );
 
     releasePreviousOrder(info.tokenId);
 
     require(
-      info.lockPayment(), //"payment not accepted"
+      info.lockPayment(requiredPaymentAmount), //"payment not accepted"
       "004"
     );
     //    require(canAddOrder(info), "invalid state");
-    addOrder(info);
+    addOrder(info, msg.sender, requiredPaymentAmount);
   }
 
-  function addOrder(DataStructs.OrderInfo memory info) internal {
+  function addOrder(DataStructs.OrderInfo memory info, address customer, uint256 paymentAmount) internal {
     _nextOrderId.increment();
     uint256 orderId = _nextOrderId.current();
     orders[orderId] = DataStructs.Order({
       id: orderId,
-      tokenContract: info.tokenContract,
-      customer: info.customer, // a valid OrderInfo would have customer == msg.sender
+      customer: customer,
       orderType: info.orderType,
       status: DataStructs.OrderStatus.OPEN,
       tokenId: info.tokenId,
       numberOfYears: info.numberOfYears,
       paymentToken: info.paymentToken,
-      paymentAmount: info.paymentAmount,
+      paymentAmount: paymentAmount,
       openTime: block.timestamp,
-      openWindow: info.openWindow,
+      openWindow: block.timestamp + 7 days,
       settled: 0
     });
-    userOrders[info.customer].push(orderId);
+    userOrders[customer].push(orderId);
     book[info.tokenId] = orderId;
     emit OrderOpen(
       orderId,
       info.tokenId,
-      info.customer,
+      customer,
       uint256(info.orderType),
-      info.numberOfYears
+      info.numberOfYears,
+      info.tld,
+      info.data
     );
   }
 
@@ -204,12 +310,12 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     order.status = DataStructs.OrderStatus.SUCCESS;
     order.takePayment(msg.sender);
     custodian.externalCallWithPermit(
-      order.tokenContract,
-      successData,
-      successDataSignature,
-      signatureNonceGroup,
-      signatureNonce
-    );
+                                     address(domainToken),
+                                     successData,
+                                     successDataSignature,
+                                     signatureNonceGroup,
+                                     signatureNonce
+                                     );
     emit OrderSuccess(orderId);
     if (book[order.tokenId] == orderId) {
       delete book[order.tokenId];

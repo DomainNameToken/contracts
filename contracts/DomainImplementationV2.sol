@@ -14,9 +14,9 @@ import {ExtensionInformation} from "./libraries/ExtensionInformation.sol";
 import {Domain} from "./libraries/Domain.sol";
 import {Destroyable} from "./Destroyable.sol";
 import {ICustodian} from "./interfaces/ICustodian.sol";
-import {IDomainTokenBase} from "./interfaces/IDomainTokenBase.sol";
+import {IDomain} from "./interfaces/IDomain.sol";
 
-contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomainTokenBase, Initializable {
+contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initializable {
   using Domain for DataStructs.Domain;
   ICustodian public custodian;
   mapping(uint256 => DataStructs.Domain) public domains;
@@ -24,6 +24,13 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomainTokenBa
   string private _symbol;
   string private NAME_SEPARATOR = " ";
   string private SYMBOL_SEPARATOR = "-";
+
+  modifier onlyCustodian() {
+    require(msg.sender == address(custodian)
+            || custodian.isOperator(msg.sender), "only custodian");
+    _;
+  }
+  
   constructor() ERC721Enumerable() ERC721("DOMAIN", "Domains") {}
 
   function initialize(
@@ -72,11 +79,11 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomainTokenBa
     return uint256(keccak256(abi.encode(info.domainName))) == info.tokenId;
   }
 
-  function exists(uint256 tokenId) external view returns (bool) {
+  function exists(uint256 tokenId) external override view returns (bool) {
     return _exists(tokenId);
   }
 
-  function extend(DataStructs.Information memory info) external onlyCustodian {
+  function extend(DataStructs.Information memory info) external override onlyCustodian {
     require(_exists(info.tokenId), "Token does not exist");
 
     require(ExtensionInformation.isValidInfo(info), "Is not valid info");
@@ -91,11 +98,9 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomainTokenBa
     );
   }
 
-  function mint(DataStructs.Information memory info) external onlyCustodian returns (uint256) {
+  function mint(DataStructs.Information memory info) external override onlyCustodian returns (uint256) {
     require(!_exists(info.tokenId), "Token Exists");
-
     require(MintInformation.isValidInfo(info), "Is not valid info");
-
     require(_isValidTokenId(info), "Is Not Valid Token Id");
 
     DataStructs.Domain memory domain = DataStructs.Domain({
@@ -117,7 +122,7 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomainTokenBa
     return info.tokenId;
   }
 
-  function burn(DataStructs.Information memory info) external onlyCustodian {
+  function burn(DataStructs.Information memory info) external override onlyCustodian {
     require(_exists(info.tokenId), "Token does not exist");
     require(BurnInformation.isValidInfo(info), "Is not valid info");
     require(domains[info.tokenId].isNotLocked(), "Domain Locked");
@@ -130,12 +135,6 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomainTokenBa
 
     delete domains[info.tokenId];
     _burn(info.tokenId);
-  }
-
-  modifier onlyCustodian() {
-    require(msg.sender == address(custodian)
-            || custodian.isOperator(msg.sender), "only custodian");
-    _;
   }
 
   function _beforeTokenTransfer(

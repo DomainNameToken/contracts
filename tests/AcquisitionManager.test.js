@@ -66,6 +66,8 @@ describe('AcquisitionManager', () => {
       custodianImplementation.address,
       'DOMAIN',
       'Domains',
+      ' ',
+      '-',
     );
     acquisitionManager = await AcquisitionManagerImplementation.deploy();
     await acquisitionManager.initialize(custodianImplementation.address);

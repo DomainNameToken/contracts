@@ -20,11 +20,13 @@ library DataStructs {
   }
 
   enum OrderType {
+    UNDEFINED,
     REGISTER,
-    TRANSFER,
+    IMPORT,
     EXTEND
   }
   enum OrderStatus {
+    UNDEFINED,
     OPEN,
     INITIATED,
     SUCCESS,
@@ -33,22 +35,16 @@ library DataStructs {
   }
 
   struct OrderInfo {
-    address tokenContract;
-    address customer;
     OrderType orderType;
     uint256 tokenId;
     uint256 numberOfYears;
     address paymentToken;
-    uint256 paymentAmount;
-    uint256 paymentWindow;
-    uint256 requestTime;
-    uint256 openWindow;
-    uint256 nonce;
+    string tld;
+    bytes data;  
   }
 
   struct Order {
     uint256 id;
-    address tokenContract;
     address customer;
     OrderType orderType;
     OrderStatus status;

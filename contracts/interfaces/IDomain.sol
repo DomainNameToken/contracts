@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {DataStructs} from "../libraries/DataStructs.sol";
 
-interface IDomainTokenBase {
+interface IDomain {
   event DomainBurned(
     uint256 tokenId,
     uint256 expiry,
@@ -25,7 +25,10 @@ interface IDomainTokenBase {
   event DomainFreeze(uint256 tokenId, uint256 status);
   event DomainLock(uint256 tokenId, uint256 status);
   event WithdrawRequest(uint256 tokenId, address owner);
-
+  function exists(uint256 tokenId) external view returns (bool);
+  function mint(DataStructs.Information memory) external returns(uint256);
+  function extend(DataStructs.Information memory) external;
+  function burn(DataStructs.Information memory) external;
   function getDomainInfo(uint256) external view returns (DataStructs.Domain memory);
 
   function setFreeze(uint256, bool) external;

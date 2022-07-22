@@ -32,4 +32,10 @@ interface ICustodian {
     bytes32 signatureNonceGroup,
     uint256 signatureNonce
   ) external payable returns (bytes memory);
+
+  function enableTlds(string[] memory) external;
+  function disableTlds(string[] memory) external;
+  function getTlds() external view returns (string[] memory);
+  function isTldEnabled(string memory) external view returns (bool);
+  function isTldEnabled(bytes32) external view returns(bool);
 }

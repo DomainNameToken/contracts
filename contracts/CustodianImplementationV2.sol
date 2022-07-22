@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-
+import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import {CustodianLib} from "./libraries/Custodian.sol";
 import {ICustodian} from "./interfaces/ICustodian.sol";
 import {Destroyable} from "./Destroyable.sol";
@@ -11,9 +11,11 @@ import {BytesDecoder} from "./libraries/BytesDecoder.sol";
 contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   using CustodianLib for CustodianLib.Custodian;
   using BytesDecoder for bytes;
+  using EnumerableMap for EnumerableMap.Bytes32ToBytes32Map;
   CustodianLib.Custodian private custodian;
   mapping(bytes32 => uint256) _nonces;
-
+  EnumerableMap.Bytes32ToBytes32Map private enabledTlds;
+  mapping(bytes32=>string) public tlds;
   constructor() {}
 
   function initialize(string memory _name, string memory _baseUrl) public initializer {
@@ -118,5 +120,46 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
       revert(response.extractRevertReason());
     }
     return response;
+  }
+
+  function enableTlds(string[] memory tlds_) external override onlyOperator {
+      for(uint256 i = 0; i < tlds_.length; i++) {
+          bytes32 tldKey = keccak256(abi.encode(tlds_[i]));
+          if(!enabledTlds.contains(tldKey)) {
+              enabledTlds.set(tldKey, tldKey);
+          }
+          if(bytes(tlds[tldKey]).length == 0){
+              tlds[tldKey] = tlds_[i];
+          }
+      }
+  }
+
+  function disableTlds(string[] memory tlds_) external override onlyOperator {
+      for(uint256 i = 0; i < tlds_.length; i++) {
+          bytes32 tldKey = keccak256(abi.encode(tlds_[i]));
+          if(enabledTlds.contains(tldKey)) {
+              enabledTlds.remove(tldKey);
+          }
+      }
+  }
+
+  function isTldEnabled(string memory tld) external override view returns (bool) {
+      bytes32 tldKey = keccak256(abi.encode(tld));
+      return enabledTlds.contains(tldKey);
+  }
+
+  function isTldEnabled(bytes32 tldKey) external override view returns (bool) {
+      return enabledTlds.contains(tldKey);
+  }
+
+  function getTlds() external override view returns (string[] memory) {
+      uint256 length = enabledTlds.length();
+      string[] memory _tlds = new string[](length);
+
+      for(uint256 i = 0; i < length; i++) {
+          (bytes32 k,) = enabledTlds.at(i);
+          _tlds[i] = tlds[k];
+      }
+      return _tlds;
   }
 }

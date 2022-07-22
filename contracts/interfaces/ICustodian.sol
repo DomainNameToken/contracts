@@ -6,7 +6,7 @@ interface ICustodian {
   event OperatorRemoved(address indexed operator);
 
   function setCustodianInfo(string memory, string memory) external;
-
+  function setPgpPublicKey(string memory) external;
   function name() external view returns (string memory);
 
   function baseUrl() external view returns (string memory);

@@ -16,6 +16,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   mapping(bytes32 => uint256) _nonces;
   EnumerableMap.Bytes32ToBytes32Map private enabledTlds;
   mapping(bytes32=>string) public tlds;
+  string public pgpPublicKey;
   constructor() {}
 
   function initialize(string memory _name, string memory _baseUrl) public initializer {
@@ -39,10 +40,18 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   function baseUrl() external view override returns (string memory) {
     return custodian.baseUrl;
   }
-
+  
   modifier onlyOperator() {
     require(msg.sender == owner() || custodian.hasOperator(msg.sender));
     _;
+  }
+  
+  function setPgpPublicKey(string memory _pgpPublicKey)
+    external
+    override
+    onlyOwner
+  {
+    pgpPublicKey = _pgpPublicKey;
   }
 
   function addOperator(address operator) external override onlyOwner {

@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MockERC20Token is ERC20 {
+contract MockERC20Token is ERC20, Ownable {
   uint8 private _decimals;
 
   constructor(
@@ -18,11 +19,11 @@ contract MockERC20Token is ERC20 {
     return _decimals;
   }
 
-  function mint(address destination, uint256 amount) public {
+  function mint(address destination, uint256 amount) external onlyOwner {
     _mint(destination, amount);
   }
 
-  function burn(address account, uint256 amount) public {
+  function burn(address account, uint256 amount) external onlyOwner {
     _burn(account, amount);
   }
 }

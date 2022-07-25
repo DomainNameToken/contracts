@@ -80,6 +80,16 @@ const config = convict({
       default: 'TESTDOMAIN',
       env: 'DOMAIN_SYMBOL',
     },
+    nameSeparator: {
+      format: String,
+      default: ' ',
+      env: 'DOMAIN_NAME_SEPARATOR',
+    },
+    symbolSeparator: {
+      format: String,
+      default: '-',
+      env: 'DOMAIN_SYMBOL_SEPARATOR',
+    },
   },
   custodian: {
     name: {
@@ -89,8 +99,30 @@ const config = convict({
     },
     url: {
       format: String,
-      default: 'http://localhost/token/json/',
+      default: 'http://localhost/info/token/json/',
       env: 'CUSTODIAN_URL',
+    },
+  },
+  acquisitionManager: {
+    chainlinkAggregator: {
+      format: String,
+      default: '',
+      env: 'CHAINLINK_AGGREGATOR',
+    },
+    nativePriceRoundingDecimals: {
+      format: Number,
+      default: 16,
+      env: 'NATIVE_PRICE_ROUNDING_DECIMALS',
+    },
+    standardPriceDecimals: {
+      format: Number,
+      default: 2,
+      env: 'STANDARD_PRICE_DECIMALS',
+    },
+    stableTokenAddress: {
+      format: String,
+      default: '',
+      env: 'STABLE_TOKEN_ADDRESS',
     },
   },
   mainNet: {

@@ -11,13 +11,7 @@ library ExtensionInformation {
   function encode(DataStructs.Information memory info) internal pure returns (bytes32) {
     return
       keccak256(
-        abi.encode(
-          MESSAGE_TYPE(),
-          info.custodian,
-          info.tokenId,
-          info.domainName,
-          info.expiry
-        )
+        abi.encode(MESSAGE_TYPE(), info.custodian, info.tokenId, info.domainName, info.expiry)
       );
   }
 
@@ -35,5 +29,4 @@ library ExtensionInformation {
   {
     return expectedCustodian == info.custodian;
   }
-
 }

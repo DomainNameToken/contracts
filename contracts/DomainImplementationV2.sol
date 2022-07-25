@@ -26,11 +26,10 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
   string private SYMBOL_SEPARATOR = "-";
 
   modifier onlyCustodian() {
-    require(msg.sender == address(custodian)
-            || custodian.isOperator(msg.sender), "only custodian");
+    require(msg.sender == address(custodian) || custodian.isOperator(msg.sender), "only custodian");
     _;
   }
-  
+
   constructor() ERC721Enumerable() ERC721("DOMAIN", "Domains") {}
 
   function initialize(
@@ -62,7 +61,7 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     NAME_SEPARATOR = nameSeparator_;
     SYMBOL_SEPARATOR = symbolSeparator_;
   }
-  
+
   function name() public view override returns (string memory) {
     return string(abi.encodePacked(custodian.name(), NAME_SEPARATOR, _name));
   }
@@ -79,7 +78,7 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     return uint256(keccak256(abi.encode(info.domainName))) == info.tokenId;
   }
 
-  function exists(uint256 tokenId) external override view returns (bool) {
+  function exists(uint256 tokenId) external view override returns (bool) {
     return _exists(tokenId);
   }
 
@@ -98,7 +97,12 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     );
   }
 
-  function mint(DataStructs.Information memory info) external override onlyCustodian returns (uint256) {
+  function mint(DataStructs.Information memory info)
+    external
+    override
+    onlyCustodian
+    returns (uint256)
+  {
     require(!_exists(info.tokenId), "Token Exists");
     require(MintInformation.isValidInfo(info), "Is not valid info");
     require(_isValidTokenId(info), "Is Not Valid Token Id");
@@ -113,12 +117,7 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     domains[info.tokenId] = domain;
 
     _mint(info.owner, info.tokenId);
-    emit DomainMinted(
-      info.tokenId,
-      info.owner,
-      info.expiry,
-      domains[info.tokenId].name
-    );
+    emit DomainMinted(info.tokenId, info.owner, info.expiry, domains[info.tokenId].name);
     return info.tokenId;
   }
 
@@ -127,11 +126,7 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     require(BurnInformation.isValidInfo(info), "Is not valid info");
     require(domains[info.tokenId].isNotLocked(), "Domain Locked");
 
-    emit DomainBurned(
-      info.tokenId,
-      domains[info.tokenId].expiry,
-      domains[info.tokenId].name
-    );
+    emit DomainBurned(info.tokenId, domains[info.tokenId].expiry, domains[info.tokenId].name);
 
     delete domains[info.tokenId];
     _burn(info.tokenId);
@@ -142,8 +137,7 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     address to,
     uint256 tokenId
   ) internal view override {
-    if (to != address(0) && from != address(0)
-        && !custodian.isOperator(msg.sender)) {
+    if (to != address(0) && from != address(0) && !custodian.isOperator(msg.sender)) {
       require(domains[tokenId].isNotLocked(), "Domain is locked");
       require(domains[tokenId].isNotFrozen(), "Domain is frozen");
       require(domains[tokenId].isNotExpired(), "Domain is expired");

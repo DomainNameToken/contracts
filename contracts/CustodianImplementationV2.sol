@@ -15,8 +15,9 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   CustodianLib.Custodian private custodian;
   mapping(bytes32 => uint256) _nonces;
   EnumerableMap.Bytes32ToBytes32Map private enabledTlds;
-  mapping(bytes32=>string) public tlds;
+  mapping(bytes32 => string) public tlds;
   string public pgpPublicKey;
+
   constructor() {}
 
   function initialize(string memory _name, string memory _baseUrl) public initializer {
@@ -40,17 +41,13 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   function baseUrl() external view override returns (string memory) {
     return custodian.baseUrl;
   }
-  
+
   modifier onlyOperator() {
     require(msg.sender == owner() || custodian.hasOperator(msg.sender));
     _;
   }
-  
-  function setPgpPublicKey(string memory _pgpPublicKey)
-    external
-    override
-    onlyOwner
-  {
+
+  function setPgpPublicKey(string memory _pgpPublicKey) external override onlyOwner {
     pgpPublicKey = _pgpPublicKey;
   }
 
@@ -69,7 +66,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   }
 
   function isOperator(address operator) external view override returns (bool) {
-      return operator == address(this) || custodian.hasOperator(operator);
+    return operator == address(this) || custodian.hasOperator(operator);
   }
 
   function checkSignature(bytes32 messageHash, bytes memory signature)
@@ -132,43 +129,43 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   }
 
   function enableTlds(string[] memory tlds_) external override onlyOperator {
-      for(uint256 i = 0; i < tlds_.length; i++) {
-          bytes32 tldKey = keccak256(abi.encode(tlds_[i]));
-          if(!enabledTlds.contains(tldKey)) {
-              enabledTlds.set(tldKey, tldKey);
-          }
-          if(bytes(tlds[tldKey]).length == 0){
-              tlds[tldKey] = tlds_[i];
-          }
+    for (uint256 i = 0; i < tlds_.length; i++) {
+      bytes32 tldKey = keccak256(abi.encode(tlds_[i]));
+      if (!enabledTlds.contains(tldKey)) {
+        enabledTlds.set(tldKey, tldKey);
       }
+      if (bytes(tlds[tldKey]).length == 0) {
+        tlds[tldKey] = tlds_[i];
+      }
+    }
   }
 
   function disableTlds(string[] memory tlds_) external override onlyOperator {
-      for(uint256 i = 0; i < tlds_.length; i++) {
-          bytes32 tldKey = keccak256(abi.encode(tlds_[i]));
-          if(enabledTlds.contains(tldKey)) {
-              enabledTlds.remove(tldKey);
-          }
+    for (uint256 i = 0; i < tlds_.length; i++) {
+      bytes32 tldKey = keccak256(abi.encode(tlds_[i]));
+      if (enabledTlds.contains(tldKey)) {
+        enabledTlds.remove(tldKey);
       }
+    }
   }
 
-  function isTldEnabled(string memory tld) external override view returns (bool) {
-      bytes32 tldKey = keccak256(abi.encode(tld));
-      return enabledTlds.contains(tldKey);
+  function isTldEnabled(string memory tld) external view override returns (bool) {
+    bytes32 tldKey = keccak256(abi.encode(tld));
+    return enabledTlds.contains(tldKey);
   }
 
-  function isTldEnabled(bytes32 tldKey) external override view returns (bool) {
-      return enabledTlds.contains(tldKey);
+  function isTldEnabled(bytes32 tldKey) external view override returns (bool) {
+    return enabledTlds.contains(tldKey);
   }
 
-  function getTlds() external override view returns (string[] memory) {
-      uint256 length = enabledTlds.length();
-      string[] memory _tlds = new string[](length);
+  function getTlds() external view override returns (string[] memory) {
+    uint256 length = enabledTlds.length();
+    string[] memory _tlds = new string[](length);
 
-      for(uint256 i = 0; i < length; i++) {
-          (bytes32 k,) = enabledTlds.at(i);
-          _tlds[i] = tlds[k];
-      }
-      return _tlds;
+    for (uint256 i = 0; i < length; i++) {
+      (bytes32 k, ) = enabledTlds.at(i);
+      _tlds[i] = tlds[k];
+    }
+    return _tlds;
   }
 }

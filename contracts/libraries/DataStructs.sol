@@ -2,12 +2,11 @@
 pragma solidity ^0.8.0;
 
 library DataStructs {
-
   struct Information {
     uint256 messageType;
     address custodian;
     uint256 tokenId;
-    address owner;      
+    address owner;
     string domainName;
     uint256 expiry;
   }
@@ -40,7 +39,7 @@ library DataStructs {
     uint256 numberOfYears;
     address paymentToken;
     string tld;
-    bytes data;  
+    string data;
   }
 
   struct Order {

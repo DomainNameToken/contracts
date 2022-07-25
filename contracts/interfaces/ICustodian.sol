@@ -6,7 +6,9 @@ interface ICustodian {
   event OperatorRemoved(address indexed operator);
 
   function setCustodianInfo(string memory, string memory) external;
+
   function setPgpPublicKey(string memory) external;
+
   function name() external view returns (string memory);
 
   function baseUrl() external view returns (string memory);
@@ -34,8 +36,12 @@ interface ICustodian {
   ) external payable returns (bytes memory);
 
   function enableTlds(string[] memory) external;
+
   function disableTlds(string[] memory) external;
+
   function getTlds() external view returns (string[] memory);
+
   function isTldEnabled(string memory) external view returns (bool);
-  function isTldEnabled(bytes32) external view returns(bool);
+
+  function isTldEnabled(bytes32) external view returns (bool);
 }

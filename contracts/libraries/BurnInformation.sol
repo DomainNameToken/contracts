@@ -11,13 +11,7 @@ library BurnInformation {
   function encode(DataStructs.Information memory info) internal pure returns (bytes32) {
     return
       keccak256(
-        abi.encode(
-          info.messageType,
-          info.custodian,
-          info.tokenId,
-          info.domainName,
-          info.expiry
-        )
+        abi.encode(info.messageType, info.custodian, info.tokenId, info.domainName, info.expiry)
       );
   }
 
@@ -35,5 +29,4 @@ library BurnInformation {
   {
     return expectedCustodian == info.custodian;
   }
-
 }

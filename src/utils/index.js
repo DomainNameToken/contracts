@@ -26,29 +26,27 @@ const messageType = (type) => {
 
 const hashOrderInformation = (info) => {
   const i = [
-    info.tokenContract,
-    info.customer,
     info.orderType,
     info.tokenId,
     info.numberOfYears,
     info.paymentToken,
+    info.tld,
+    info.data,
+    info.customer,
     info.paymentAmount,
-    info.paymentWindow,
-    info.requestTime,
-    info.openWindow,
+    info.validUntil,
     info.nonce,
   ];
   const encoded = ethers.utils.defaultAbiCoder.encode([
-    'address', // tokenContract
-    'address', // customer
     'uint256', // orderType
     'uint256', // tokenId
     'uint256', // numberOfYears
     'address', // paymentToken
+    'string', // tld
+    'string', // data
+    'address', // customer
     'uint256', // paymentAmount
-    'uint256', // paymentWindow
-    'uint256', // requestTime
-    'uint256', // openWindow
+    'uint256', // validUntil
     'uint256', // nonce
   ], i);
   return ethers.utils.keccak256(
@@ -156,62 +154,70 @@ const getAcquisitionOrderInfo = async ({
   domainToken,
   custodian,
   customer,
-  orderType = 0, // registration
+  orderType = 1, // registration
   domainName = 'testdomainname.com',
   years = 1,
   paymentToken = ZEROA,
   paymentAmount = ethers.utils.parseUnits('0.01', 18),
   nonce,
   admin,
+  tld,
+  data,
+  withSignature = false,
+  validUntil = now() + 15 * 60,
 }) => {
   const info = {
-    admin,
-    tokenContract: domainToken.address,
-    customer: customer.address,
     orderType,
+    tokenId: encodeDomainToId(domainName),
     numberOfYears: years,
     paymentToken: paymentToken.address ? paymentToken.address : paymentToken,
-    paymentAmount,
-    tokenId: encodeDomainToId(domainName),
-    paymentWindow: 15 * 60,
-    requestTime: now(),
-    openWindow: 24 * 3600,
+    tld,
+    data,
     nonce,
+    paymentAmount,
+    customer: customer.address ? customer.address : customer,
+    validUntil,
   };
-  const hash = hashOrderInformation(info);
-  const mintFn = orderType <= 1 ? 'mint' : 'extend';
-  const mintInfo = {
-    messageType: messageType(orderType <= 1 ? 'mint' : 'extend'),
-    custodian: custodian.address,
-    tokenId: info.tokenId,
-    owner: customer.address,
-    domainName,
-    expiry: info.requestTime + info.numberOfYears * 365 * 24 * 3600,
-  };
-  const mintInfoEncoded = encodeDomainInfoFn(domainToken, mintFn, mintInfo, domainToken);
-  const signatureNonceGroup = nonceGroupId('domains.mint');
-  const signatureNonce = nextNonce(signatureNonceGroup);
-  const successHash = ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(
-      ['address', 'bytes', 'bytes32', 'uint256'],
-      [domainToken.address,
-        mintInfoEncoded,
+  if (withSignature) {
+    const hash = hashOrderInformation(info);
+    const mintFn = orderType <= 2 ? 'mint' : 'extend';
+    const mintInfo = {
+      messageType: messageType(orderType <= 2 ? 'mint' : 'extend'),
+      custodian: custodian.address,
+      tokenId: info.tokenId,
+      owner: customer.address,
+      domainName,
+      expiry: info.requestTime + info.numberOfYears * 365 * 24 * 3600,
+    };
+    const mintInfoEncoded = encodeDomainInfoFn(domainToken, mintFn, mintInfo, domainToken);
+    const signatureNonceGroup = nonceGroupId('domains.mint');
+    const signatureNonce = nextNonce(signatureNonceGroup);
+    const successHash = ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(
+        ['address', 'bytes', 'bytes32', 'uint256'],
+        [domainToken.address,
+          mintInfoEncoded,
+          signatureNonceGroup,
+          signatureNonce],
+      ),
+    );
+    const successSignature = await admin.signMessage(ethers.utils.arrayify(successHash));
+    return {
+      orderInfo: info,
+      hash,
+      signature: await admin.signMessage(ethers.utils.arrayify(hash)),
+      success: {
+        data: mintInfoEncoded,
         signatureNonceGroup,
-        signatureNonce],
-    ),
-  );
-  const successSignature = await admin.signMessage(ethers.utils.arrayify(successHash));
+        signatureNonce,
+        hash: successHash,
+        signature: successSignature,
+      },
+    };
+  }
   return {
     orderInfo: info,
-    hash,
-    signature: await admin.signMessage(ethers.utils.arrayify(hash)),
-    success: {
-      data: mintInfoEncoded,
-      signatureNonceGroup,
-      signatureNonce,
-      hash: successHash,
-      signature: successSignature,
-    },
+    hash: hashOrderInformation(info),
   };
 };
 
@@ -227,4 +233,5 @@ module.exports = {
   now,
   hashOrderInformation,
   getAcquisitionOrderInfo,
+  messageType,
 };

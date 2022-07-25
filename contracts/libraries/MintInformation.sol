@@ -37,5 +37,4 @@ library MintInformation {
   {
     return expectedCustodian == info.custodian;
   }
-
 }

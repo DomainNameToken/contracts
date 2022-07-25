@@ -103,10 +103,9 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     if (_aggregator != address(0)) {
       nativeChainlinkAggregator = AggregatorV3Interface(_aggregator);
     }
-    
+
     nativePriceRoundingDecimals = _nativePriceRoundingDecimals;
     standardPriceDecimals = _standardPriceDecimals;
-    
   }
 
   function addStableToken(address token) external onlyCustodian {
@@ -132,15 +131,11 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     return result;
   }
 
-  function setStandardPrice(
-    string[] memory _tlds,
-    uint256[] memory prices
-  ) external onlyCustodian {
+  function setStandardPrice(string[] memory _tlds, uint256[] memory prices) external onlyCustodian {
     for (uint256 i = 0; i < _tlds.length; i++) {
       bytes32 tldKey = keccak256(abi.encode(_tlds[i]));
       standardPrices[tldKey] = prices[i];
     }
-
   }
 
   function getStandardPrice(string memory _tld) public view returns (uint256) {
@@ -211,7 +206,12 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     bool withTokenCheck
   ) internal {
     require(
-            info.isValidRequest(address(domainToken), address(custodian), acceptedStableTokens, withTokenCheck),
+      info.isValidRequest(
+        address(domainToken),
+        address(custodian),
+        acceptedStableTokens,
+        withTokenCheck
+      ),
       "invalid request"
     );
 

@@ -50,12 +50,12 @@ library OrderInfo {
         return false;
       }
     }
-    if(withTokenCheck){
-        if (info.paymentToken != address(0)) {
-            if (!acceptedStableTokens.contains(info.paymentToken)) {
-                return false;
-            }
+    if (withTokenCheck) {
+      if (info.paymentToken != address(0)) {
+        if (!acceptedStableTokens.contains(info.paymentToken)) {
+          return false;
         }
+      }
     }
     if (!ICustodian(custodian).isTldEnabled(info.tld)) {
       return false;

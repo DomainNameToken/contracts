@@ -54,6 +54,6 @@
     "solc": "^0.8.13"
   },
   "pre-commit": [
-    "prettier:solidity"
+    "test", "prettier:solidity"
   ]
 }

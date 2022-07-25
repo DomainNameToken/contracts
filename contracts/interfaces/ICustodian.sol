@@ -7,11 +7,11 @@ interface ICustodian {
 
   function setCustodianInfo(string memory, string memory) external;
 
+  function setPgpPublicKey(string memory) external;
+
   function name() external view returns (string memory);
 
   function baseUrl() external view returns (string memory);
-
-  function chainId() external view returns (uint256);
 
   function addOperator(address) external;
 
@@ -34,4 +34,14 @@ interface ICustodian {
     bytes32 signatureNonceGroup,
     uint256 signatureNonce
   ) external payable returns (bytes memory);
+
+  function enableTlds(string[] memory) external;
+
+  function disableTlds(string[] memory) external;
+
+  function getTlds() external view returns (string[] memory);
+
+  function isTldEnabled(string memory) external view returns (bool);
+
+  function isTldEnabled(bytes32) external view returns (bool);
 }

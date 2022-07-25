@@ -140,4 +140,33 @@ describe('Custodian', () => {
       .to.emit(externalCallTestContract, 'ExternalCallReceived')
       .withArgs(custodianGateway.address);
   });
+  it('should enable tlds', async () => {
+    await custodianGateway.addOperator(admin.address);
+
+    const tlds = ['com', 'net', 'org'];
+    await custodianGateway.enableTlds(tlds);
+    for (let i = 0; i < tlds.length; i++) {
+      const isTldEnabled = await custodianGateway['isTldEnabled(string)'](tlds[i]);
+      expect(isTldEnabled).to.equal(true);
+    }
+    const enabledTlds = await custodianGateway.getTlds();
+    expect(enabledTlds).to.eql(tlds);
+  });
+  it('should disable tlds', async () => {
+    await custodianGateway.addOperator(admin.address);
+
+    const tlds = ['com', 'net', 'org'];
+    await custodianGateway.enableTlds(tlds);
+    for (let i = 0; i < tlds.length; i++) {
+      const isTldEnabled = await custodianGateway['isTldEnabled(string)'](tlds[i]);
+      expect(isTldEnabled).to.equal(true);
+    }
+    let enabledTlds = await custodianGateway.getTlds();
+    expect(enabledTlds).to.eql(tlds);
+    await custodianGateway.disableTlds(['com']);
+    enabledTlds = await custodianGateway.getTlds();
+    for (let i = 0; i < enabledTlds.length; i++) {
+      expect(['org', 'net'].includes(enabledTlds[i])).to.equal(true);
+    }
+  });
 });

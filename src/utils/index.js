@@ -26,31 +26,27 @@ const messageType = (type) => {
 
 const hashOrderInformation = (info) => {
   const i = [
-    info.tokenContract,
-    info.customer,
-    info.chainId,
     info.orderType,
     info.tokenId,
     info.numberOfYears,
     info.paymentToken,
+    info.tld,
+    info.data,
+    info.customer,
     info.paymentAmount,
-    info.paymentWindow,
-    info.requestTime,
-    info.openWindow,
+    info.validUntil,
     info.nonce,
   ];
   const encoded = ethers.utils.defaultAbiCoder.encode([
-    'address', // tokenContract
-    'address', // customer
-    'uint256', // chainId
     'uint256', // orderType
     'uint256', // tokenId
     'uint256', // numberOfYears
     'address', // paymentToken
+    'string', // tld
+    'string', // data
+    'address', // customer
     'uint256', // paymentAmount
-    'uint256', // paymentWindow
-    'uint256', // requestTime
-    'uint256', // openWindow
+    'uint256', // validUntil
     'uint256', // nonce
   ], i);
   return ethers.utils.keccak256(
@@ -63,19 +59,7 @@ const hashInformation = (info) => {
     info.messageType || messageType('invalid'),
     info.custodian,
     info.tokenId || encodeDomainToId(info.domainName),
-
-    [
-      info.destination.chainId || 0,
-      info.destination.owner || 0,
-      info.destination.blockNumber || 0,
-    ],
-
-    [
-      info.source.chainId || 0,
-      info.source.owner || 0,
-      info.source.blockNumber || 0,
-    ],
-
+    info.owner.address ? info.owner.address : info.owner,
     info.nonce,
     info.domainName,
     info.expiryTime || 0,
@@ -86,15 +70,7 @@ const hashInformation = (info) => {
       'uint256',
       'address',
       'uint256', // token id
-
-      'uint256', // destination chain
-      'address', // destination owner
-      'uint256', // destination block
-
-      'uint256', // source chain
-      'address', // source owner
-      'uint256', // source block
-
+      'address', // owner
       'uint256', // Nonce
       'string', // domainName
       'uint256', // expiryTime
@@ -115,13 +91,11 @@ const generateInfo = async (
   custodianGateway,
   type,
   domainName,
-  sourceOwner = ZEROA,
-  destinationOwner = ZEROA,
+  owner = ZEROA,
   expiry = now() + 3600 * 24 * 365,
 
 ) => {
   const block = await ethers.provider.getBlock();
-  const { chainId } = await ethers.provider.getNetwork();
   const tokenId = encodeDomainToId(domainName);
 
   if (type == 'mint') {
@@ -129,17 +103,7 @@ const generateInfo = async (
       messageType: messageType(type),
       custodian: custodianGateway.address,
       tokenId,
-      source: {
-        chainId: 0,
-        owner: sourceOwner.address ? sourceOwner.address : sourceOwner,
-        blockNumber: 0,
-      },
-      destination: {
-        chainId,
-        owner: destinationOwner.address ? destinationOwner.address : destinationOwner,
-        blockNumber: parseInt(`${block.number}`, 10) - 1,
-      },
-
+      owner,
       domainName,
       expiry,
     };
@@ -148,16 +112,7 @@ const generateInfo = async (
       messageType: messageType(type),
       custodian: custodianGateway.address,
       tokenId,
-      source: {
-        chainId,
-        owner: sourceOwner.address ? sourceOwner.address : sourceOwner,
-        blockNumber: parseInt(`${block.number}`, 10) - 1,
-      },
-      destination: {
-        chainId: 0,
-        owner: destinationOwner.address ? destinationOwner.address : destinationOwner,
-        blockNumber: 0,
-      },
+      owner,
       domainName,
       expiry,
     };
@@ -166,20 +121,7 @@ const generateInfo = async (
       messageType: messageType(type),
       custodian: custodianGateway.address,
       tokenId,
-
-      source: {
-        chainId,
-        owner: sourceOwner.address ? sourceOwner.address : sourceOwner,
-        blockNumber: parseInt(`${block.number}`, 10) - 1,
-
-      },
-
-      destination: {
-        chainId,
-        owner: destinationOwner.address ? destinationOwner.address : destinationOwner,
-        blockNumber: parseInt(`${block.number}`, 10) - 1,
-
-      },
+      owner,
       domainName,
       expiry,
     };
@@ -187,11 +129,10 @@ const generateInfo = async (
   throw new Error('unknown info type');
 };
 const infoEncode = (mintInfo) => {
-  const i = [[mintInfo.messageType, mintInfo.custodian, mintInfo.tokenId, [mintInfo.source.chainId, mintInfo.source.owner, mintInfo.source.blockNumber], [mintInfo.destination.chainId, mintInfo.destination.owner, mintInfo.destination.blockNumber], mintInfo.domainName, mintInfo.expiry]];
-
+  const i = [[mintInfo.messageType, mintInfo.custodian, mintInfo.tokenId, mintInfo.owner.address ? mintInfo.owner.address : mintInfo.owner, mintInfo.domainName, mintInfo.expiry]];
   return i;
 };
-const encodeDomainInfoFn = (domainGateway, fn, mintInfo, domainImplementation) => domainImplementation.interface.encodeFunctionData(`${fn}((uint256,address,uint256,(uint256,address,uint256),(uint256,address,uint256),string,uint256))`, infoEncode(mintInfo));
+const encodeDomainInfoFn = (domainGateway, fn, mintInfo, domainImplementation) => domainImplementation.interface.encodeFunctionData(`${fn}((uint256,address,uint256,address,string,uint256))`, infoEncode(mintInfo));
 const nonceGroupId = (str) => ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [str]));
 
 const nextNonce = (() => {
@@ -213,72 +154,70 @@ const getAcquisitionOrderInfo = async ({
   domainToken,
   custodian,
   customer,
-  orderType = 0, // registration
+  orderType = 1, // registration
   domainName = 'testdomainname.com',
   years = 1,
   paymentToken = ZEROA,
   paymentAmount = ethers.utils.parseUnits('0.01', 18),
   nonce,
   admin,
+  tld,
+  data,
+  withSignature = false,
+  validUntil = now() + 15 * 60,
 }) => {
   const info = {
-    admin,
-    tokenContract: domainToken.address,
-    customer: customer.address,
-    chainId: (await ethers.provider.getNetwork()).chainId,
     orderType,
+    tokenId: encodeDomainToId(domainName),
     numberOfYears: years,
     paymentToken: paymentToken.address ? paymentToken.address : paymentToken,
-    paymentAmount,
-    tokenId: encodeDomainToId(domainName),
-    paymentWindow: 15 * 60,
-    requestTime: now(),
-    openWindow: 24 * 3600,
+    tld,
+    data,
     nonce,
+    paymentAmount,
+    customer: customer.address ? customer.address : customer,
+    validUntil,
   };
-  const hash = hashOrderInformation(info);
-  const mintFn = orderType <= 1 ? 'mint' : 'extend';
-  const mintInfo = {
-    messageType: messageType(orderType <= 1 ? 'mint' : 'extend'),
-    custodian: custodian.address,
-    tokenId: info.tokenId,
-    source: {
-      chainId: (orderType <= 1 ? 0 : info.chainId),
-      owner: orderType <= 1 ? ZEROA : customer.address,
-      blockNumber: 0,
-    },
-    destination: {
-      chainId: info.chainId,
+  if (withSignature) {
+    const hash = hashOrderInformation(info);
+    const mintFn = orderType <= 2 ? 'mint' : 'extend';
+    const mintInfo = {
+      messageType: messageType(orderType <= 2 ? 'mint' : 'extend'),
+      custodian: custodian.address,
+      tokenId: info.tokenId,
       owner: customer.address,
-      blockNumber: 0,
-    },
-    domainName,
-    expiry: info.requestTime + info.numberOfYears * 365 * 24 * 3600,
-  };
-  const mintInfoEncoded = encodeDomainInfoFn(domainToken, mintFn, mintInfo, domainToken);
-  const signatureNonceGroup = nonceGroupId('domains.mint');
-  const signatureNonce = nextNonce(signatureNonceGroup);
-  const successHash = ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(
-      ['address', 'bytes', 'bytes32', 'uint256'],
-      [domainToken.address,
-        mintInfoEncoded,
+      domainName,
+      expiry: info.requestTime + info.numberOfYears * 365 * 24 * 3600,
+    };
+    const mintInfoEncoded = encodeDomainInfoFn(domainToken, mintFn, mintInfo, domainToken);
+    const signatureNonceGroup = nonceGroupId('domains.mint');
+    const signatureNonce = nextNonce(signatureNonceGroup);
+    const successHash = ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(
+        ['address', 'bytes', 'bytes32', 'uint256'],
+        [domainToken.address,
+          mintInfoEncoded,
+          signatureNonceGroup,
+          signatureNonce],
+      ),
+    );
+    const successSignature = await admin.signMessage(ethers.utils.arrayify(successHash));
+    return {
+      orderInfo: info,
+      hash,
+      signature: await admin.signMessage(ethers.utils.arrayify(hash)),
+      success: {
+        data: mintInfoEncoded,
         signatureNonceGroup,
-        signatureNonce],
-    ),
-  );
-  const successSignature = await admin.signMessage(ethers.utils.arrayify(successHash));
+        signatureNonce,
+        hash: successHash,
+        signature: successSignature,
+      },
+    };
+  }
   return {
     orderInfo: info,
-    hash,
-    signature: await admin.signMessage(ethers.utils.arrayify(hash)),
-    success: {
-      data: mintInfoEncoded,
-      signatureNonceGroup,
-      signatureNonce,
-      hash: successHash,
-      signature: successSignature,
-    },
+    hash: hashOrderInformation(info),
   };
 };
 
@@ -294,4 +233,5 @@ module.exports = {
   now,
   hashOrderInformation,
   getAcquisitionOrderInfo,
+  messageType,
 };

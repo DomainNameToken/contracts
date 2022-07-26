@@ -55,7 +55,7 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     string memory symbol_,
     string memory nameSeparator_,
     string memory symbolSeparator_
-  ) public {
+  ) public onlyOwner {
     _name = name_;
     _symbol = symbol_;
     NAME_SEPARATOR = nameSeparator_;

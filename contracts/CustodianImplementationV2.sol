@@ -7,6 +7,7 @@ import {Destroyable} from "./Destroyable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 import {BytesDecoder} from "./libraries/BytesDecoder.sol";
+
 /// @title Custodian Implementation
 /// @notice This contract is used to identify operators and manage domain tokens
 contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {

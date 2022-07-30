@@ -46,7 +46,6 @@ library DataStructs {
     REFUNDED // order has been refunded
   }
 
-
   /// @notice Order information when initiating an order with acquisition manager
   struct OrderInfo {
     OrderType orderType;

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+
 /// @title Custodian functions
 /// @notice Provides functions for managing custodians
 library CustodianLib {
@@ -23,6 +24,7 @@ library CustodianLib {
   function setName(Custodian storage custodian, string memory name) internal {
     custodian.name = name;
   }
+
   /// @notice Sets the base url of the custodian
   /// @param custodian The custodian storage slot
   /// @param baseUrl The base url of the custodian
@@ -43,7 +45,7 @@ library CustodianLib {
     address signer = messageHash.toEthSignedMessageHash().recover(signature);
     return custodian.operators.contains(uint256(uint160(address(signer))));
   }
-  
+
   /// @notice Check if the given address is an operator of the custodian
   /// @param custodian The custodian storage slot
   /// @param operator The address to be checked

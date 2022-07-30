@@ -25,7 +25,7 @@ library OrderInfo {
     EnumerableMap.AddressToUintMap storage acceptedStableTokens,
     bool withTokenCheck
   ) internal view returns (bool) {
-      /// @dev can not accept an order for a non set token id
+    /// @dev can not accept an order for a non set token id
     if (info.tokenId == 0) {
       return false;
     }
@@ -139,7 +139,6 @@ library OrderInfo {
         IERC20(info.paymentToken).allowance(msg.sender, address(this)) >= requiredAmount;
     }
   }
-
 
   /// @notice Lock the payment amount for the order info
   /// @dev When paymentToken is not address(0) transfer from msg.sender to acquisitionManager contract address the requiredAmount

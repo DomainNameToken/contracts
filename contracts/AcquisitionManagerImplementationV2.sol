@@ -12,6 +12,7 @@ import {IDomain} from "./interfaces/IDomain.sol";
 import {DataStructs} from "./libraries/DataStructs.sol";
 import {OrderInfo} from "./libraries/OrderInfo.sol";
 import {Order} from "./libraries/Order.sol";
+
 /// @title AcquisitionManagerImplementation
 /// @notice Domain token acquisition manager contract. Order the minting or extension of a domain token
 contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
@@ -239,7 +240,7 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
       standardPrice = standardPrice / 10**(standardPriceDecimals - aggregatorDecimals);
     }
     uint256 p = (standardPrice * 10**18) / price;
-    
+
     return (p / 10**nativePriceRoundingDecimals) * (10**nativePriceRoundingDecimals);
   }
 
@@ -270,7 +271,7 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
   /// @dev For EXTEND orders, the tokenId must exist
   /// @dev will emit OrderOpen event on success
   /// @param info The order information.
- 
+
   function request(DataStructs.OrderInfo memory info) external payable {
     require(hasStandardPrice(info.tld), "tld not accepted");
     uint256 requiredPaymentAmount;
@@ -371,7 +372,7 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
   function ordersCount() external view returns (uint256) {
     return _nextOrderId.current();
   }
-  
+
   function doRefund(DataStructs.Order storage order) internal {
     if (order.canRefund()) {
       if (!order.refund()) {

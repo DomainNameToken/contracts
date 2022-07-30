@@ -60,7 +60,7 @@ library Domain {
 
   /// @notice Updates expiration date of a domain
   /// @param domain The domain storage slot
-  /// @param expiry The new expiration date 
+  /// @param expiry The new expiration date
   function updateExpiry(DataStructs.Domain storage domain, uint256 expiry) internal {
     domain.expiry = expiry;
   }

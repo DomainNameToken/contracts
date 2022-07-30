@@ -16,7 +16,10 @@ import {Destroyable} from "./Destroyable.sol";
 import {ICustodian} from "./interfaces/ICustodian.sol";
 import {IDomain} from "./interfaces/IDomain.sol";
 
-contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initializable {
+/// @title Domain Token implementation
+/// @notice Domain Token implementation
+/// @inheritdoc IDomain
+contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initializable {  
   using Domain for DataStructs.Domain;
   ICustodian public custodian;
   mapping(uint256 => DataStructs.Domain) public domains;
@@ -173,7 +176,7 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
       require(domains[tokenId].isNotExpired(), "Domain is expired");
     }
   }
-  
+
   function setLock(uint256 tokenId, bool status) external override {
     require(_exists(tokenId), "token does not exist");
     require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");

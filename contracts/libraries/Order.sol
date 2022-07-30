@@ -6,7 +6,6 @@ import {DataStructs} from "./DataStructs.sol";
 /// @title Order functions
 /// @notice Provides function for checking and managing an order
 library Order {
-
   /// @notice Checks if the order was initiated ( acknowledged by the custodian )
   /// @param order The order
   /// @return True if the order was initiated, false otherwise
@@ -61,7 +60,7 @@ library Order {
 
   /// @notice Checks if the order can be released from active order of a token
   /// @param order The order
-    /// @return True if the order can be released from active order of a token, false otherwise
+  /// @return True if the order can be released from active order of a token, false otherwise
   function canRelease(DataStructs.Order storage order) internal view returns (bool) {
     return !isInitiated(order) || isExpired(order);
   }

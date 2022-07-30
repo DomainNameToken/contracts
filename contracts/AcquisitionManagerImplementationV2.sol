@@ -12,32 +12,53 @@ import {IDomain} from "./interfaces/IDomain.sol";
 import {DataStructs} from "./libraries/DataStructs.sol";
 import {OrderInfo} from "./libraries/OrderInfo.sol";
 import {Order} from "./libraries/Order.sol";
-
+/// @title AcquisitionManagerImplementation
+/// @notice Domain token acquisition manager contract. Order the minting or extension of a domain token
 contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
   using OrderInfo for DataStructs.OrderInfo;
   using Order for DataStructs.Order;
   using Counters for Counters.Counter;
   using EnumerableMap for EnumerableMap.AddressToUintMap;
+  /// @notice The custodian contract address
   ICustodian public custodian;
+  /// @notice The domain token contract address
   IDomain public domainToken;
+  /// @notice Counter for order ids
   Counters.Counter private _nextOrderId;
 
-  /*
-    current order for a token
-    tokenId to order id mapping
-   */
+  /// @notice Index of active orders for each token id
   mapping(uint256 => uint256) public book;
-  /*
-    user order history
-   */
+
+  /// @notice Index of all orders ids requested by an user
   mapping(address => uint256[]) public userOrders;
 
+  /// @notice Index of all orders information by order id
   mapping(uint256 => DataStructs.Order) public orders;
+
+  /// @notice mapping of all prices associated with each tld
   mapping(bytes32 => uint256) public standardPrices;
+
+  /// @notice number of decimals for standard prices
   uint256 public standardPriceDecimals;
+
+  /// @notice list of all accepted stable tokens
   EnumerableMap.AddressToUintMap private acceptedStableTokens;
+
+  /// @notice Oracle address for native price in USD
   AggregatorV3Interface public nativeChainlinkAggregator;
+
+  /// @notice native price rounding factor
+  /// @dev as the price of native asset can fluctuate from the moment of order request transaction transmission to block inclusion, the price is truncated
   uint256 public nativePriceRoundingDecimals;
+
+  /// @notice Emitted when a new order is requested
+  /// @param orderId The order id
+  /// @param tokenId The token id
+  /// @param customer The customer address
+  /// @param orderType The type of order ( register , import or extension )
+  /// @param numberOfYears The number of registration years requested
+  /// @param tld The tld of the domain in clear text e.g. "com"
+  /// @param orderData The armoured pgp encrypted order data. The data is encrypted with the custodian pgpPublicKey
   event OrderOpen(
     uint256 orderId,
     uint256 tokenId,
@@ -47,9 +68,24 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     string tld,
     string orderData
   );
+
+  /// @notice Emitted when an open order is acknowledged by the custodian
+  /// @param orderId The order id
   event OrderInitiated(uint256 orderId);
+
+  /// @notice Emitted when the acquisition of an initiated order has failed
+  /// @param orderId The order id
   event OrderFail(uint256 orderId);
+
+  /// @notice Emitted when the acquisition of an initiated order was successful
   event OrderSuccess(uint256 orderId);
+
+  /// @notice Emitted when an order refund has failed
+  /// @param tokenId The token id
+  /// @param orderId The order id
+  /// @param customer The customer address
+  /// @param paymentToken The token address of the payment. will be address(0) for native asset
+  /// @param paymentAmount The amount of the payment.
   event RefundFailed(
     uint256 tokenId,
     uint256 orderId,
@@ -57,6 +93,13 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     address paymentToken,
     uint256 paymentAmount
   );
+
+  /// @notice Emitted when an order refund was successful
+  /// @param tokenId The token id
+  /// @param orderId The order id
+  /// @param customer The customer address
+  /// @param paymentToken The token address of the payment. will be address(0) for native asset
+  /// @param paymentAmount The amount of the payment.
   event RefundSuccess(
     uint256 tokenId,
     uint256 orderId,
@@ -64,6 +107,8 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     address paymentToken,
     uint256 paymentAmount
   );
+
+  /// @notice Checks if the caller is the custodian contract or one of its operators
   modifier onlyCustodian() {
     require(
       address(custodian) != address(0) &&
@@ -87,6 +132,13 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     standardPriceDecimals = _standardPriceDecimals;
   }
 
+  /// @notice Sets contract configurations.
+  /// @dev Can only be called by owner of the contract
+  /// @param _custodian The custodian contract address. Will not be set if address(0)
+  /// @param _domainToken The domain token contract address. Will not be set if address(0)
+  /// @param _aggregator The oracle address for native price in USD. Will not be set if address(0)
+  /// @param _nativePriceRoundingDecimals The number of decimals for native price rounding.
+  /// @param _standardPriceDecimals The number of decimals for standard price.
   function setConfigs(
     address _custodian,
     address _domainToken,
@@ -108,18 +160,26 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     standardPriceDecimals = _standardPriceDecimals;
   }
 
+  /// @notice Adds a new stable token to the list of accepted stable tokens
+  /// @dev Can only be called by custodian contract or one of its operators
+  /// @param token The token address
   function addStableToken(address token) external onlyCustodian {
     if (!acceptedStableTokens.contains(token)) {
       acceptedStableTokens.set(token, block.timestamp);
     }
   }
 
+  /// @notice Removes a stable token from the list of accepted stable tokens
+  /// @dev Can only be called by custodian contract or one of its operators
+  /// @param token The token address
   function removeStableToken(address token) external onlyCustodian {
     if (acceptedStableTokens.contains(token)) {
       acceptedStableTokens.remove(token);
     }
   }
 
+  /// @notice Returns the list of accepted stable tokens
+  /// @returns The list of accepted stable tokens
   function getAcceptedStableTokens() external view returns (address[] memory) {
     uint256 length = acceptedStableTokens.length();
     address[] memory result = new address[](length);
@@ -131,6 +191,10 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     return result;
   }
 
+  /// @notice Set standard prices for a list of tlds.
+  /// @dev Can only be called by custodian contract or one of its operators
+  /// @param tlds The list of tlds
+  /// @param prices The list of prices
   function setStandardPrice(string[] memory _tlds, uint256[] memory prices) external onlyCustodian {
     for (uint256 i = 0; i < _tlds.length; i++) {
       bytes32 tldKey = keccak256(abi.encode(_tlds[i]));
@@ -138,16 +202,24 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     }
   }
 
+  /// @notice Returns the standard price for a tld.
+  /// @param tld The tld
   function getStandardPrice(string memory _tld) public view returns (uint256) {
     bytes32 tldKey = keccak256(abi.encode(_tld));
     return standardPrices[tldKey] == 1 ? 0 : standardPrices[tldKey];
   }
 
+  /// @notice Checks if a tld has a standard price.
+  /// @param tld The tld
+  /// @returns True if a standard price is set for the tld, false otherwise.
   function hasStandardPrice(string memory _tld) public view returns (bool) {
     bytes32 tldKey = keccak256(abi.encode(_tld));
     return standardPrices[tldKey] != 0;
   }
 
+  /// @notice Returns the price of a tld in native asset.
+  /// @param tld The tld
+  /// @returns The price in native asset.
   function getNativePrice(string memory _tld) public view returns (uint256) {
     (, int256 iprice, , , ) = nativeChainlinkAggregator.latestRoundData();
     uint256 price = uint256(iprice);
@@ -155,6 +227,7 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     if (price == 0) {
       revert("price not available");
     }
+
     uint256 standardPrice = getStandardPrice(_tld);
     if (standardPrice == 0) {
       return 0;
@@ -166,12 +239,14 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
       standardPrice = standardPrice / 10**(standardPriceDecimals - aggregatorDecimals);
     }
     uint256 p = (standardPrice * 10**18) / price;
-    /*
-        round price to 4 decimals
-       */
+    
     return (p / 10**nativePriceRoundingDecimals) * (10**nativePriceRoundingDecimals);
   }
 
+  /// @notice Returns the price of a tld in specified stable token
+  /// @param tld The tld
+  /// @param token The stable token address
+  /// @returns The price in specified stable token.
   function getStablePrice(string memory _tld, address token) public view returns (uint256) {
     uint256 standardPrice = getStandardPrice(_tld);
     if (standardPrice == 0) {
@@ -187,6 +262,15 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     return standardPrice;
   }
 
+  /// @notice Place an order. It can be called by any address.
+  /// @dev The customer is the caller of the function.
+  /// @dev Will fail if the tld is not accepted by custodian or if a standard price is not set for the tld.
+  /// @dev Will also fail if desired payment token is not in the list of accepted stable tokens.
+  /// @dev Will fail if payment can not be locked
+  /// @dev For EXTEND orders, the tokenId must exist
+  /// @dev will emit OrderOpen event on success
+  /// @param info The order information.
+ 
   function request(DataStructs.OrderInfo memory info) external payable {
     require(hasStandardPrice(info.tld), "tld not accepted");
     uint256 requiredPaymentAmount;
@@ -224,6 +308,13 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     addOrder(info, customer, paymentAmount);
   }
 
+  /// @notice Place an order signed by one of custodian operators. The payment amount provided with the order is not checked against the standard price set for the tld.
+  /// @param info The order information.
+  /// @param customer The customer address.
+  /// @param paymentAmount The payment amount.
+  /// @param validUntil The time until the order is valid.
+  /// @param nonce The nonce of the order used for signature.
+  /// @param signature The signature of the order provided by one of the custodian operators.
   function requestSigned(
     DataStructs.OrderInfo memory info,
     address customer,
@@ -276,10 +367,11 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     );
   }
 
+  /// @notice Get the total orders count.
   function ordersCount() external view returns (uint256) {
     return _nextOrderId.current();
   }
-
+  
   function doRefund(DataStructs.Order storage order) internal {
     if (order.canRefund()) {
       if (!order.refund()) {
@@ -314,6 +406,9 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     delete book[tokenId];
   }
 
+  /// @notice Customers can request a refund for a specific order that they made and was not initiated by the custodian and expired
+  /// @dev can emit RefundSuccess / RefundFailed event
+  /// @param orderId The order id.
   function requestRefund(uint256 orderId) external {
     require(
       orderId > 0, //"invalid order id"
@@ -334,6 +429,8 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     }
   }
 
+  /// @notice Custodian acknowledges an order and begins the acquisition process.
+  /// @param orderId The order id.
   function initiate(uint256 orderId) external onlyCustodian {
     DataStructs.Order storage order = orders[orderId];
     require(
@@ -348,6 +445,14 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     emit OrderInitiated(orderId);
   }
 
+  /// @notice Custodian marks the order as successful when the acquisition process is complete.
+  /// @dev will call domain token contract through custodian contract to mint or extend the domain.
+  /// @dev will release the order locked funds to custodian.
+  /// @param orderId The order id.
+  /// @param successData The call data for the domain token contract.
+  /// @param successDataSignature The signature of the call data.
+  /// @param signatureNonceGroup The nonce group of the signature.
+  /// @param signatureNonce The nonce of the signature.
   function success(
     uint256 orderId,
     bytes memory successData,
@@ -375,6 +480,9 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     }
   }
 
+  /// @notice Custodian marks the order as failed when the acquisition process has failed.
+  /// @param orderId The order id.
+  /// @param shouldRefund Whether the order should be refunded.
   function fail(uint256 orderId, bool shouldRefund) external onlyCustodian {
     DataStructs.Order storage order = orders[orderId];
     require(

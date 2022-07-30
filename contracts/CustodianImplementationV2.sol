@@ -7,7 +7,8 @@ import {Destroyable} from "./Destroyable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 import {BytesDecoder} from "./libraries/BytesDecoder.sol";
-
+/// @title Custodian Implementation
+/// @notice This contract is used to identify operators and manage domain tokens
 contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   using CustodianLib for CustodianLib.Custodian;
   using BytesDecoder for bytes;
@@ -17,13 +18,13 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   /**
      @notice Current expected minimum nonce for each group
    */
-  
+
   mapping(bytes32 => uint256) _nonces;
 
   /**
      @notice enabled tlds list
    */
-  
+
   EnumerableMap.Bytes32ToBytes32Map private enabledTlds;
 
   /**
@@ -44,6 +45,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
     custodian.setName(_name);
     custodian.setBaseUrl(_baseUrl);
   }
+
   /**
     @notice Set custodian information
     @dev Set the name and base URL of the custodian. Can be called only by owner of contract.
@@ -58,6 +60,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
     custodian.setName(_name);
     custodian.setBaseUrl(_baseUrl);
   }
+
   /**
     @notice Get custodian name
     @dev Get the name of the custodian.
@@ -66,6 +69,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   function name() external view override returns (string memory) {
     return custodian.name;
   }
+
   /**
      @notice Get custodian base URL
      @dev Get the base URL of the custodian.
@@ -74,6 +78,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   function baseUrl() external view override returns (string memory) {
     return custodian.baseUrl;
   }
+
   /**
      @notice Modifier to accept only owner of contract or any of the custodian's operators.
    */
@@ -81,6 +86,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
     require(msg.sender == owner() || custodian.hasOperator(msg.sender));
     _;
   }
+
   /**
     @notice Set the PGP public key of the custodian.
     @dev Set the PGP public key of the custodian.
@@ -89,6 +95,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   function setPgpPublicKey(string memory _pgpPublicKey) external override onlyOwner {
     pgpPublicKey = _pgpPublicKey;
   }
+
   /**
      @notice Adds a new operator to the custodian.
      @dev Adds a new operator to the custodian.
@@ -98,6 +105,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
     custodian.addOperator(operator);
     emit OperatorAdded(operator);
   }
+
   /**
      @notice Removes an operator from the custodian.
      @dev Removes an operator from the custodian.
@@ -107,6 +115,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
     custodian.removeOperator(operator);
     emit OperatorRemoved(operator);
   }
+
   /**
      @notice Gets the list of operators of the custodian.
      @dev Gets the list of operators of the custodian.
@@ -115,6 +124,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   function getOperators() external view override returns (address[] memory) {
     return custodian.getOperators();
   }
+
   /**
      @notice Checks if an operator is an operator of the custodian.
      @dev Checks if an operator is an operator of the custodian.
@@ -124,6 +134,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   function isOperator(address operator) external view override returns (bool) {
     return operator == address(this) || custodian.hasOperator(operator);
   }
+
   /**
     @notice Checks if provided signature is made by one of custodian's operator.
     @dev Checks if provided signature is made by one of custodian's operator.
@@ -139,6 +150,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   {
     return custodian.checkSignature(messageHash, signature);
   }
+
   /**
     @notice Get the current nonce for provided group
     @dev Get the current nonce for provided group.
@@ -148,6 +160,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   function _nonce(bytes32 group) external view override returns (uint256) {
     return _nonces[group];
   }
+
   /**
      @notice Call an external contract with provided data. Will forward msg.value along with the contract call. Can be called only by one of the custodian's operators.
      @dev Call an external contract with provided data.
@@ -182,6 +195,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
     bytes32 hash = keccak256(abi.encode(_contract, data, signatureNonceGroup, signatureNonce));
     return custodian.checkSignature(hash, signature);
   }
+
   /**
      @notice Call an external contract with provided data. Will forward msg.value along with the contract call. Can be called by any address. 
      @dev Call an external contract with provided data.
@@ -207,6 +221,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
     }
     return response;
   }
+
   /**
    @notice Enables a list of tlds. Can be called only by operators
    @dev Enables a list of tlds.
@@ -223,6 +238,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
       }
     }
   }
+
   /**
      @notice Disables a list of tlds. Can be called only by operators
      @dev Disables a list of tlds.
@@ -236,6 +252,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
       }
     }
   }
+
   /**
      @notice Check if a tld is enabled.
      @dev Check if a tld is enabled.
@@ -246,6 +263,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
     bytes32 tldKey = keccak256(abi.encode(tld));
     return enabledTlds.contains(tldKey);
   }
+
   /**
      @notice Check if a tld is enabled.
      @dev Check if a tld is enabled.
@@ -255,6 +273,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   function isTldEnabled(bytes32 tldKey) external view override returns (bool) {
     return enabledTlds.contains(tldKey);
   }
+
   /**
      @notice Gets the list of enabled tlds.
      @dev Gets the list of enabled tlds.

@@ -1,0 +1,458 @@
+[
+  {
+    "tld": "agency",
+    "price": 43.98
+  },
+  {
+    "tld": "app",
+    "price": 39.98
+  },
+  {
+    "tld": "art",
+    "price": 16.79
+  },
+  {
+    "tld": "band",
+    "price": 43.98
+  },
+  {
+    "tld": "best",
+    "price": 59.98
+  },
+  {
+    "tld": "bet",
+    "price": 47.98
+  },
+  {
+    "tld": "biz",
+    "price": 35.98
+  },
+  {
+    "tld": "blue",
+    "price": 47.98
+  },
+  {
+    "tld": "business",
+    "price": 21.98
+  },
+  {
+    "tld": "bz",
+    "price": 50
+  },
+  {
+    "tld": "cam",
+    "price": 59.98
+  },
+  {
+    "tld": "casa",
+    "price": 35.98
+  },
+  {
+    "tld": "center",
+    "price": 49.98
+  },
+  {
+    "tld": "city",
+    "price": 49.98
+  },
+  {
+    "tld": "click",
+    "price": 25.98
+  },
+  {
+    "tld": "cloud",
+    "price": 39.98
+  },
+  {
+    "tld": "club",
+    "price": 25.98
+  },
+  {
+    "tld": "com",
+    "price": 31.98
+  },
+  {
+    "tld": "company",
+    "price": 21.98
+  },
+  {
+    "tld": "consulting",
+    "price": 53.98
+  },
+  {
+    "tld": "dance",
+    "price": 43.98
+  },
+  {
+    "tld": "democrat",
+    "price": 53.98
+  },
+  {
+    "tld": "desi",
+    "price": 37.98
+  },
+  {
+    "tld": "dev",
+    "price": 33.98
+  },
+  {
+    "tld": "directory",
+    "price": 49.98
+  },
+  {
+    "tld": "earth",
+    "price": 27.59
+  },
+  {
+    "tld": "education",
+    "price": 49.98
+  },
+  {
+    "tld": "email",
+    "price": 37.48
+  },
+  {
+    "tld": "equipment",
+    "price": 49.98
+  },
+  {
+    "tld": "exposed",
+    "price": 49.98
+  },
+  {
+    "tld": "family",
+    "price": 43.98
+  },
+  {
+    "tld": "fans",
+    "price": 39.98
+  },
+  {
+    "tld": "fashion",
+    "price": 59.98
+  },
+  {
+    "tld": "fit",
+    "price": 59.98
+  },
+  {
+    "tld": "football",
+    "price": 43.98
+  },
+  {
+    "tld": "forsale",
+    "price": 53.98
+  },
+  {
+    "tld": "fun",
+    "price": 49.98
+  },
+  {
+    "tld": "futbol",
+    "price": 23.98
+  },
+  {
+    "tld": "fyi",
+    "price": 43.98
+  },
+  {
+    "tld": "gallery",
+    "price": 49.98
+  },
+  {
+    "tld": "games",
+    "price": 43.98
+  },
+  {
+    "tld": "garden",
+    "price": 59.98
+  },
+  {
+    "tld": "gift",
+    "price": 45.98
+  },
+  {
+    "tld": "graphics",
+    "price": 49.98
+  },
+  {
+    "tld": "gratis",
+    "price": 49.98
+  },
+  {
+    "tld": "group",
+    "price": 39.98
+  },
+  {
+    "tld": "haus",
+    "price": 53.98
+  },
+  {
+    "tld": "homes",
+    "price": 29.98
+  },
+  {
+    "tld": "icu",
+    "price": 19.98
+  },
+  {
+    "tld": "info",
+    "price": 49.98
+  },
+  {
+    "tld": "institute",
+    "price": 49.98
+  },
+  {
+    "tld": "international",
+    "price": 49.98
+  },
+  {
+    "tld": "io",
+    "price": 69.98
+  },
+  {
+    "tld": "irish",
+    "price": 41.98
+  },
+  {
+    "tld": "jetzt",
+    "price": 49.98
+  },
+  {
+    "tld": "lighting",
+    "price": 49.98
+  },
+  {
+    "tld": "link",
+    "price": 21.98
+  },
+  {
+    "tld": "live",
+    "price": 43.98
+  },
+  {
+    "tld": "ltd",
+    "price": 43.98
+  },
+  {
+    "tld": "management",
+    "price": 49.98
+  },
+  {
+    "tld": "men",
+    "price": 49.98
+  },
+  {
+    "tld": "mobi",
+    "price": 55.98
+  },
+  {
+    "tld": "moda",
+    "price": 53.98
+  },
+  {
+    "tld": "moe",
+    "price": 39.98
+  },
+  {
+    "tld": "name",
+    "price": 21.98
+  },
+  {
+    "tld": "net",
+    "price": 33.98
+  },
+  {
+    "tld": "network",
+    "price": 49.98
+  },
+  {
+    "tld": "news",
+    "price": 43.98
+  },
+  {
+    "tld": "ngo",
+    "price": 33.98
+  },
+  {
+    "tld": "ninja",
+    "price": 33.98
+  },
+  {
+    "tld": "one",
+    "price": 21.98
+  },
+  {
+    "tld": "ong",
+    "price": 33.98
+  },
+  {
+    "tld": "onl",
+    "price": 39.98
+  },
+  {
+    "tld": "org",
+    "price": 25.98
+  },
+  {
+    "tld": "page",
+    "price": 25.98
+  },
+  {
+    "tld": "pet",
+    "price": 47.98
+  },
+  {
+    "tld": "photography",
+    "price": 49.98
+  },
+  {
+    "tld": "photos",
+    "price": 49.98
+  },
+  {
+    "tld": "pictures",
+    "price": 25.98
+  },
+  {
+    "tld": "pink",
+    "price": 47.98
+  },
+  {
+    "tld": "place",
+    "price": 29.98
+  },
+  {
+    "tld": "pro",
+    "price": 59.98
+  },
+  {
+    "tld": "promo",
+    "price": 47.98
+  },
+  {
+    "tld": "pub",
+    "price": 53.98
+  },
+  {
+    "tld": "red",
+    "price": 47.98
+  },
+  {
+    "tld": "reisen",
+    "price": 49.98
+  },
+  {
+    "tld": "report",
+    "price": 49.98
+  },
+  {
+    "tld": "reviews",
+    "price": 43.98
+  },
+  {
+    "tld": "rip",
+    "price": 39.98
+  },
+  {
+    "tld": "rocks",
+    "price": 23.98
+  },
+  {
+    "tld": "rodeo",
+    "price": 17.98
+  },
+  {
+    "tld": "shop",
+    "price": 59.98
+  },
+  {
+    "tld": "soccer",
+    "price": 43.98
+  },
+  {
+    "tld": "social",
+    "price": 53.98
+  },
+  {
+    "tld": "solutions",
+    "price": 49.98
+  },
+  {
+    "tld": "soy",
+    "price": 49.98
+  },
+  {
+    "tld": "space",
+    "price": 45.98
+  },
+  {
+    "tld": "studio",
+    "price": 43.98
+  },
+  {
+    "tld": "supplies",
+    "price": 49.98
+  },
+  {
+    "tld": "supply",
+    "price": 49.98
+  },
+  {
+    "tld": "support",
+    "price": 49.98
+  },
+  {
+    "tld": "systems",
+    "price": 49.98
+  },
+  {
+    "tld": "technology",
+    "price": 49.98
+  },
+  {
+    "tld": "tel",
+    "price": 21.98
+  },
+  {
+    "tld": "tips",
+    "price": 49.98
+  },
+  {
+    "tld": "today",
+    "price": 49.98
+  },
+  {
+    "tld": "top",
+    "price": 29.98
+  },
+  {
+    "tld": "uno",
+    "price": 39.98
+  },
+  {
+    "tld": "video",
+    "price": 43.98
+  },
+  {
+    "tld": "vip",
+    "price": 31.98
+  },
+  {
+    "tld": "website",
+    "price": 49.98
+  },
+  {
+    "tld": "work",
+    "price": 19.98
+  },
+  {
+    "tld": "wtf",
+    "price": 59.98
+  },
+  {
+    "tld": "xyz",
+    "price": 19.19
+  }
+]

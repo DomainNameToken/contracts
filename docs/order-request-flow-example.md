@@ -127,6 +127,7 @@ throw new Error('not enough matic to pay for transaction');
 
 ```
 
+
 ```javascript
 // lets approve the funds to be spent by AcquisitionManager
 let tx = await paymentToken.approve(acquisitionManager.address, requiredPaymentAmount);
@@ -166,5 +167,29 @@ const [orderId] = ownOrders;
 const onChainOrderInfo = await acquisitionManager.orders[orderId];
 
 console.log(onChainOrderInfo);
+
+```
+
+The above will place an order and pay for it with ERC20 token.
+If we want to pay with native asset ( matic ) we will have to
+
+1) have enough matic to pay for order and gas cost for transaction
+
+```javascript
+// lets get the price of a tld in matic
+const nativePriceForOneYearTld = await acquisitionManager.getNativePrice(tld);
+
+const requiredMaticToPayForOrder = nativePriceForOneYearTld.mul(years);
+
+// initiating transaction to place the order
+// notice { value: ... } this is the matic that will be sent along with the transaction to AcquisitionManager
+tx = await acquisitionManager.request([
+    ORDER_TYPES.REGISTER,
+    tokenId,
+    years,
+    ethers.constants.AddressZero, // signal native asset payment option
+    tld,
+    encryptedInfoData
+], { value: requiredMaticToPayForOrder });
 
 ```

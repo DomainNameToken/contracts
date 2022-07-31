@@ -18,7 +18,6 @@ import {IDomain} from "./interfaces/IDomain.sol";
 
 /// @title Domain Token implementation
 /// @notice Domain Token implementation
-/// @inheritdoc IDomain
 contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initializable {
   using Domain for DataStructs.Domain;
   ICustodian public custodian;

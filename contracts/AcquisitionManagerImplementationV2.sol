@@ -20,32 +20,32 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
   using Order for DataStructs.Order;
   using Counters for Counters.Counter;
   using EnumerableMap for EnumerableMap.AddressToUintMap;
-  /// @notice The custodian contract address
+  // The custodian contract address
   ICustodian public custodian;
-  /// @notice The domain token contract address
+  // The domain token contract address
   IDomain public domainToken;
-  /// @notice Counter for order ids
+  // Counter for order ids
   Counters.Counter private _nextOrderId;
 
-  /// @notice Index of active orders for each token id
+  // Index of active orders for each token id
   mapping(uint256 => uint256) public book;
 
-  /// @notice Index of all orders ids requested by an user
+  // Index of all orders ids requested by an user
   mapping(address => uint256[]) public userOrders;
 
-  /// @notice Index of all orders information by order id
+  // Index of all orders information by order id
   mapping(uint256 => DataStructs.Order) public orders;
 
-  /// @notice mapping of all prices associated with each tld
+  // mapping of all prices associated with each tld
   mapping(bytes32 => uint256) public standardPrices;
 
-  /// @notice number of decimals for standard prices
+  // number of decimals for standard prices
   uint256 public standardPriceDecimals;
 
-  /// @notice list of all accepted stable tokens
+  // list of all accepted stable tokens
   EnumerableMap.AddressToUintMap private acceptedStableTokens;
 
-  /// @notice Oracle address for native price in USD
+  // Oracle address for native price in USD
   AggregatorV3Interface public nativeChainlinkAggregator;
 
   /// @notice native price rounding factor
@@ -180,7 +180,7 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
   }
 
   /// @notice Returns the list of accepted stable tokens
-  /// @returns The list of accepted stable tokens
+  /// @return The list of accepted stable tokens
   function getAcceptedStableTokens() external view returns (address[] memory) {
     uint256 length = acceptedStableTokens.length();
     address[] memory result = new address[](length);
@@ -194,7 +194,7 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
 
   /// @notice Set standard prices for a list of tlds.
   /// @dev Can only be called by custodian contract or one of its operators
-  /// @param tlds The list of tlds
+  /// @param _tlds The list of tlds
   /// @param prices The list of prices
   function setStandardPrice(string[] memory _tlds, uint256[] memory prices) external onlyCustodian {
     for (uint256 i = 0; i < _tlds.length; i++) {
@@ -204,23 +204,23 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
   }
 
   /// @notice Returns the standard price for a tld.
-  /// @param tld The tld
+  /// @param _tld The tld
   function getStandardPrice(string memory _tld) public view returns (uint256) {
     bytes32 tldKey = keccak256(abi.encode(_tld));
     return standardPrices[tldKey] == 1 ? 0 : standardPrices[tldKey];
   }
 
   /// @notice Checks if a tld has a standard price.
-  /// @param tld The tld
-  /// @returns True if a standard price is set for the tld, false otherwise.
+  /// @param _tld The tld
+  /// @return True if a standard price is set for the tld, false otherwise.
   function hasStandardPrice(string memory _tld) public view returns (bool) {
     bytes32 tldKey = keccak256(abi.encode(_tld));
     return standardPrices[tldKey] != 0;
   }
 
   /// @notice Returns the price of a tld in native asset.
-  /// @param tld The tld
-  /// @returns The price in native asset.
+  /// @param _tld The tld
+  /// @return The price in native asset.
   function getNativePrice(string memory _tld) public view returns (uint256) {
     (, int256 iprice, , , ) = nativeChainlinkAggregator.latestRoundData();
     uint256 price = uint256(iprice);
@@ -245,9 +245,9 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
   }
 
   /// @notice Returns the price of a tld in specified stable token
-  /// @param tld The tld
+  /// @param _tld The tld
   /// @param token The stable token address
-  /// @returns The price in specified stable token.
+  /// @return The price in specified stable token.
   function getStablePrice(string memory _tld, address token) public view returns (uint256) {
     uint256 standardPrice = getStandardPrice(_tld);
     if (standardPrice == 0) {

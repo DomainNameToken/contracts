@@ -10,11 +10,11 @@ library CustodianLib {
   using EnumerableMap for EnumerableMap.UintToAddressMap;
 
   struct Custodian {
-    /// @dev The name of the custodian
+    // The name of the custodian
     string name;
-    /// @dev Base url of the custodian
+    // Base url of the custodian
     string baseUrl;
-    /// @dev The list of operators of the custodian
+    // The list of operators of the custodian
     EnumerableMap.UintToAddressMap operators;
   }
 
@@ -36,7 +36,7 @@ library CustodianLib {
   /// @param custodian The custodian storage slot
   /// @param messageHash The message hash to be checked
   /// @param signature The signature to be checked
-  /// @returns True if the signature is valid, false otherwise
+  /// @return True if the signature is valid, false otherwise
   function checkSignature(
     Custodian storage custodian,
     bytes32 messageHash,
@@ -49,7 +49,7 @@ library CustodianLib {
   /// @notice Check if the given address is an operator of the custodian
   /// @param custodian The custodian storage slot
   /// @param operator The address to be checked
-  /// @returns True if the address is an operator, false otherwise
+  /// @return True if the address is an operator, false otherwise
   function hasOperator(Custodian storage custodian, address operator) internal view returns (bool) {
     return custodian.operators.contains(uint256(uint160(address(operator))));
   }

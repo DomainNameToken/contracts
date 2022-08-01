@@ -10,7 +10,7 @@ library Order {
   /// @param order The order
   /// @return True if the order was initiated, false otherwise
   function isInitiated(DataStructs.Order storage order) internal view returns (bool) {
-      return order.status == DataStructs.OrderStatus.INITIATED;
+    return order.status == DataStructs.OrderStatus.INITIATED;
   }
 
   /// @notice Check if the order status is open and not acknowledged by the custodian
@@ -62,7 +62,7 @@ library Order {
   /// @param order The order
   /// @return True if the order can be released from active order of a token, false otherwise
   function canRelease(DataStructs.Order storage order) internal view returns (bool) {
-      return isExpired(order);
+    return isExpired(order);
   }
 
   /// @notice Refund the amount of the order

@@ -16,14 +16,12 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   using EnumerableMap for EnumerableMap.Bytes32ToBytes32Map;
   CustodianLib.Custodian private custodian;
 
-  
   // Current expected minimum nonce for each group
   mapping(bytes32 => uint256) _nonces;
 
   // enabled tlds list
   EnumerableMap.Bytes32ToBytes32Map private enabledTlds;
 
-  
   // Index of bytes32 keccak256(encode.abi(tldString)) to tldString
   mapping(bytes32 => string) public tlds;
 

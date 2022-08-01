@@ -153,7 +153,11 @@ library OrderInfo {
       return true;
     }
     if (info.paymentToken == address(0)) {
-      return true;
+        // send back any surplus amount
+        if(requiredAmount < msg.value){
+            payable(msg.sender).transfer(msg.value - requiredAmount);
+        }
+        return true;
     } else {
       uint256 balanceBefore = IERC20(info.paymentToken).balanceOf(address(this));
       IERC20(info.paymentToken).transferFrom(msg.sender, address(this), requiredAmount);

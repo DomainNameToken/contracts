@@ -150,8 +150,9 @@ describe('AcquisitionManager', () => {
           orderInfo.data,
         );
     } else {
+      const balanceOfManagerBefore = await ethers.provider.getBalance(acquisitionManager.address);
       await expect(acquisitionManager.connect(customer)
-        .request(orderInfo, { value: orderInfo.paymentAmount }))
+        .request(orderInfo, { value: orderInfo.paymentAmount.mul(2) }))
         .to
         .emit(acquisitionManager, 'OrderOpen(uint256,uint256,address,uint256,uint256,string,string)')
         .withArgs(
@@ -163,6 +164,8 @@ describe('AcquisitionManager', () => {
           tld,
           orderInfo.data,
         );
+      const balanceOfManagerAfter = await ethers.provider.getBalance(acquisitionManager.address);
+      expect(balanceOfManagerAfter.sub(balanceOfManagerBefore)).to.equal(orderInfo.paymentAmount);
     }
     const expectedActiveOrderId = 1;
     expect(await acquisitionManager.book(orderInfo.tokenId)).to.equal(1);

@@ -234,14 +234,15 @@ describe('AcquisitionManager', () => {
       ),
     );
     const successSignature = await admin.signMessage(ethers.utils.arrayify(successHash));
-
+    const balanceBeforeSuccess = await mockERC20Token.balanceOf(allAccounts[0].address);
     await expect(acquisitionManager.success(1, successData, successSignature, signatureNonceGroup, signatureNonce))
       .to
       .emit(acquisitionManager, 'OrderSuccess(uint256)')
       .withArgs(1);
     order = await acquisitionManager.orders(1);
     expect(order.status).to.equal(3); // expect status == SUCCESS
-
+    const balanceAfterSuccess = await mockERC20Token.balanceOf(allAccounts[0].address);
+    expect(balanceAfterSuccess.sub(balanceBeforeSuccess)).to.equal(orderInfo.paymentAmount);
     const domainInfo = await domainImplementation.getDomainInfo(orderInfo.tokenId);
     expect(domainInfo.name).to.equal(testDomainName);
     const ownerOfDomain = await domainImplementation.ownerOf(orderInfo.tokenId);

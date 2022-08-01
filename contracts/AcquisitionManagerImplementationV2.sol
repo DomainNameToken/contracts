@@ -467,7 +467,7 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
       "011"
     );
     order.status = DataStructs.OrderStatus.SUCCESS;
-    order.takePayment(msg.sender);
+    order.takePayment(owner());
     custodian.externalCallWithPermit(
       address(domainToken),
       successData,
@@ -494,7 +494,7 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     if (shouldRefund) {
       doRefund(order);
     } else {
-      order.takePayment(msg.sender);
+        order.takePayment(owner());
     }
     if (book[order.tokenId] == orderId) {
       delete book[order.tokenId];

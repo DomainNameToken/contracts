@@ -26,13 +26,16 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
   string private _symbol;
   string private NAME_SEPARATOR = " ";
   string private SYMBOL_SEPARATOR = "-";
-
+  uint256 private _totalSupply_ToBeRemoved;
+  
   modifier onlyCustodian() {
     require(msg.sender == address(custodian) || custodian.isOperator(msg.sender), "only custodian");
     _;
   }
 
-  constructor() ERC721Enumerable() ERC721("DOMAIN", "Domains") {}
+  constructor()
+      ERC721Enumerable()
+      ERC721("DOMAIN", "Domains") {}
 
   function initialize(
     address custodian_,
@@ -146,6 +149,7 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
 
     _mint(info.owner, info.tokenId);
     emit DomainMinted(info.tokenId, info.owner, info.expiry, domains[info.tokenId].name);
+
     return info.tokenId;
   }
 
@@ -160,14 +164,17 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     emit DomainBurned(info.tokenId, domains[info.tokenId].expiry, domains[info.tokenId].name);
 
     delete domains[info.tokenId];
+    
     _burn(info.tokenId);
+
   }
 
   function _beforeTokenTransfer(
     address from,
     address to,
     uint256 tokenId
-  ) internal view override {
+  ) internal override {
+     super._beforeTokenTransfer(from, to, tokenId);
     /// @dev a domain token can not be transferred if it is locked, frozen or expired
     if (to != address(0) && from != address(0) && !custodian.isOperator(msg.sender)) {
       require(domains[tokenId].isNotLocked(), "Domain is locked");
@@ -229,4 +236,5 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
   function isFrozen(uint256 tokenId) external view override returns (bool) {
     return !domains[tokenId].isNotFrozen();
   }
+
 }

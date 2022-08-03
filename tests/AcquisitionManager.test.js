@@ -247,6 +247,8 @@ describe('AcquisitionManager', () => {
     expect(domainInfo.name).to.equal(testDomainName);
     const ownerOfDomain = await domainImplementation.ownerOf(orderInfo.tokenId);
     expect(ownerOfDomain).to.equal(allAccounts[2].address);
+    const totalSupply = await domainImplementation.totalSupply();
+    expect(totalSupply).to.equal(1);
   });
 
   it('should correctly mark order as FAILED', async () => {

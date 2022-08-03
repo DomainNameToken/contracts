@@ -494,7 +494,7 @@ contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
     if (shouldRefund) {
       doRefund(order);
     } else {
-        order.takePayment(owner());
+      order.takePayment(owner());
     }
     if (book[order.tokenId] == orderId) {
       delete book[order.tokenId];

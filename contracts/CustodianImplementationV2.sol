@@ -209,6 +209,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
     if (!success) {
       revert(response.extractRevertReason());
     }
+    _nonces[signatureNonceGroup] = signatureNonce;
     return response;
   }
 

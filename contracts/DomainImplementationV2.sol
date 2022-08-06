@@ -27,15 +27,15 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
   string private NAME_SEPARATOR = " ";
   string private SYMBOL_SEPARATOR = "-";
   uint256 private _totalSupply_ToBeRemoved;
+  mapping(uint256=>uint256) public mintingTimestamp;
+  uint256 public withdrawLockWindow = 90 * 24 * 3600; // 90 days
   
   modifier onlyCustodian() {
     require(msg.sender == address(custodian) || custodian.isOperator(msg.sender), "only custodian");
     _;
   }
 
-  constructor()
-      ERC721Enumerable()
-      ERC721("DOMAIN", "Domains") {}
+  constructor() ERC721Enumerable() ERC721("DOMAIN", "Domains") {}
 
   function initialize(
     address custodian_,
@@ -105,6 +105,10 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     return _exists(tokenId);
   }
 
+  function setWithdrawLockWindow(uint256 _withdrawLockWindow) external onlyOwner {
+    withdrawLockWindow = _withdrawLockWindow;
+  }
+  
   /// @notice Set new expiration time for a domain
   /// @dev can be called only by custodian
   /// @dev emits DomainExtended event on success
@@ -162,11 +166,11 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     require(domains[info.tokenId].isNotLocked(), "Domain Locked");
 
     emit DomainBurned(info.tokenId, domains[info.tokenId].expiry, domains[info.tokenId].name);
-
+    
     delete domains[info.tokenId];
+    delete mintingTimestamp[info.tokenId];
     
     _burn(info.tokenId);
-
   }
 
   function _beforeTokenTransfer(
@@ -174,12 +178,16 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     address to,
     uint256 tokenId
   ) internal override {
-     super._beforeTokenTransfer(from, to, tokenId);
+    super._beforeTokenTransfer(from, to, tokenId);
     /// @dev a domain token can not be transferred if it is locked, frozen or expired
     if (to != address(0) && from != address(0) && !custodian.isOperator(msg.sender)) {
       require(domains[tokenId].isNotLocked(), "Domain is locked");
       require(domains[tokenId].isNotFrozen(), "Domain is frozen");
       require(domains[tokenId].isNotExpired(), "Domain is expired");
+    }
+    // set timestamp of domain token minting
+    if(from == address(0)){
+        mintingTimestamp[tokenId] = block.timestamp;
     }
   }
 
@@ -196,6 +204,11 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     emit DomainFreeze(tokenId, domains[tokenId].frozen);
   }
 
+  function canWithdraw(uint256 tokenId) public view returns (bool) {
+    require(_exists(tokenId), "Domain does not exist");
+    return block.timestamp >= mintingTimestamp[tokenId] + withdrawLockWindow;
+  }
+
   /// @notice Request to withdraw the token from custodian.
   /// @dev only the owner or approved address can request to withdraw the domain name
   /// @dev will emit WithdrawRequest event on success
@@ -204,6 +217,7 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
   function withdraw(uint256 tokenId) external override {
     require(_exists(tokenId), "Domain does no exist");
     require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
+    require(canWithdraw(tokenId), "Domain can not be withdrawn");
     require(domains[tokenId].isNotLocked(), "Domain is locked");
     require(domains[tokenId].isNotFrozen(), "Domain is frozen");
     require(domains[tokenId].isNotExpired(), "Domain is expired");
@@ -236,5 +250,4 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
   function isFrozen(uint256 tokenId) external view override returns (bool) {
     return !domains[tokenId].isNotFrozen();
   }
-
 }

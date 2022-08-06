@@ -6,6 +6,8 @@ const { ethers } = hre;
 
 const config = require('../config');
 
+const version = process.argv[2] || `next-${Date.now()}`;
+
 async function main() {
   await hre.run('compile');
   const [owner, operator1, operator2] = await ethers.getSigners();
@@ -21,11 +23,15 @@ async function main() {
   const upImplementation = await deploy.vanity({
     deployer,
     owner,
-    specificSalt: ethers.utils.id('dnt-acquisition-manager-v2.1'),
+    specificSalt: ethers.utils.id(`dnt-acquisition-manager-${version}`),
     artifact,
     constructorBytes: undefined,
   });
   console.log(`Deployed AcquisitionManagerImplementation at ${upImplementation.address}`);
+  fs.writeFileSync(
+    `./deploys/${config.get('network.name')}/acquisition-manager.implementation-${version}.address`,
+    `${upImplementation.address}`,
+  );
   const tx = await admin.contract.upgrade(
     upgradeableAddress,
     upImplementation.address,

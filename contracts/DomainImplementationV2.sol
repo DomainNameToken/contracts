@@ -27,9 +27,9 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
   string private NAME_SEPARATOR = " ";
   string private SYMBOL_SEPARATOR = "-";
   uint256 private _totalSupply_ToBeRemoved;
-  mapping(uint256=>uint256) public mintingTimestamp;
+  mapping(uint256 => uint256) public mintingTimestamp;
   uint256 public withdrawLockWindow = 90 * 24 * 3600; // 90 days
-  
+
   modifier onlyCustodian() {
     require(msg.sender == address(custodian) || custodian.isOperator(msg.sender), "only custodian");
     _;
@@ -108,7 +108,7 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
   function setWithdrawLockWindow(uint256 _withdrawLockWindow) external onlyOwner {
     withdrawLockWindow = _withdrawLockWindow;
   }
-  
+
   /// @notice Set new expiration time for a domain
   /// @dev can be called only by custodian
   /// @dev emits DomainExtended event on success
@@ -166,10 +166,10 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     require(domains[info.tokenId].isNotLocked(), "Domain Locked");
 
     emit DomainBurned(info.tokenId, domains[info.tokenId].expiry, domains[info.tokenId].name);
-    
+
     delete domains[info.tokenId];
     delete mintingTimestamp[info.tokenId];
-    
+
     _burn(info.tokenId);
   }
 
@@ -186,8 +186,8 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
       require(domains[tokenId].isNotExpired(), "Domain is expired");
     }
     // set timestamp of domain token minting
-    if(from == address(0)){
-        mintingTimestamp[tokenId] = block.timestamp;
+    if (from == address(0)) {
+      mintingTimestamp[tokenId] = block.timestamp;
     }
   }
 

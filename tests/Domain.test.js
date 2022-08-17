@@ -45,8 +45,8 @@ describe('Domain', () => {
     [admin, ...otherAccounts] = allAccounts;
     userAccount = otherAccounts[0];
     UpgradeableContract = await ethers.getContractFactory('UpgradeableContract');
-    DomainImplementation = await ethers.getContractFactory('DomainImplementationV2');
-    CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV2');
+    DomainImplementation = await ethers.getContractFactory('DomainImplementation');
+    CustodianImplementation = await ethers.getContractFactory('CustodianImplementation');
 
     AdminProxy = await ethers.getContractFactory('AdminProxy');
   });

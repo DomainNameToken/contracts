@@ -44,7 +44,7 @@ TODO
     custodian = {};
     custodian.address = fs.readFileSync(`./deploys/${config.get('network.name')}/custodian.address`, 'utf8').toString();
     custodian.salt = fs.readFileSync(`./deploys/${config.get('network.name')}/custodian.salt`, 'utf8').toString();
-    const custodianArtifact = await hre.artifacts.readArtifact('CustodianImplementationV2');
+    const custodianArtifact = await hre.artifacts.readArtifact('CustodianImplementation');
     custodian.contract = new ethers.Contract(custodian.address, custodianArtifact.abi, owner);
     custodian.implementation = {};
     custodian.implementation.address = fs.readFileSync(`./deploys/${config.get('network.name')}/custodian.implementation.address`, 'utf8').toString();
@@ -56,7 +56,7 @@ TODO
       admin: admin.contract,
       owner,
       specificSalt: ethers.utils.id('dnt-custodian'),
-      artifactName: 'CustodianImplementationV2',
+      artifactName: 'CustodianImplementation',
       initFunction: 'initialize(string,string)',
       initArgs: [config.get('custodian.name'), config.get('custodian.url')],
     });
@@ -70,7 +70,7 @@ TODO
     admin: admin.contract,
     owner,
     specificSalt: ethers.utils.id('dnt-domain'),
-    artifactName: 'DomainImplementationV2',
+    artifactName: 'DomainImplementation',
     initFunction: 'initialize(address,string,string,string,string)',
     initArgs: [custodian.contract.address, config.get('domain.symbol'), config.get('domain.name'), config.get('domain.nameSeparator'), config.get('domain.symbolSeparator')],
   });
@@ -82,7 +82,7 @@ TODO
     admin: admin.contract,
     owner,
     specificSalt: ethers.utils.id('dnt-acquisition-manager'),
-    artifactName: 'AcquisitionManagerImplementationV2',
+    artifactName: 'AcquisitionManagerImplementation',
     initFunction: 'initialize(address,address,address,uint256,uint256)',
     initArgs: [custodian.contract.address,
       domain.contract.address,
@@ -101,9 +101,9 @@ TODO
     console.log(`stable token address: ${stableAddress}`);
   }
   const artifacts = {};
-  artifacts.custodian = await hre.artifacts.readArtifact('CustodianImplementationV2');
-  artifacts.domain = await hre.artifacts.readArtifact('DomainImplementationV2');
-  artifacts.acquisitionManager = await hre.artifacts.readArtifact('AcquisitionManagerImplementationV2');
+  artifacts.custodian = await hre.artifacts.readArtifact('CustodianImplementation');
+  artifacts.domain = await hre.artifacts.readArtifact('DomainImplementation');
+  artifacts.acquisitionManager = await hre.artifacts.readArtifact('AcquisitionManagerImplementation');
   const contracts = {};
   contracts.custodian = new ethers.Contract(custodian.contract.address, artifacts.custodian.abi, owner);
   contracts.domain = new ethers.Contract(domain.contract.address, artifacts.domain.abi, owner);

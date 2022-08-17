@@ -10,7 +10,7 @@ import {BytesDecoder} from "./libraries/BytesDecoder.sol";
 
 /// @title Custodian Implementation
 /// @notice This contract is used to identify operators and manage domain tokens
-contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
+contract CustodianImplementation is ICustodian, Destroyable, Initializable {
   using CustodianLib for CustodianLib.Custodian;
   using BytesDecoder for bytes;
   using EnumerableMap for EnumerableMap.Bytes32ToBytes32Map;

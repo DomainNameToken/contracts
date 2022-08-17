@@ -18,7 +18,7 @@ async function main() {
   const admin = await deploy.admin({ owner, deployer });
 
   const upgradeableAddress = fs.readFileSync(`./deploys/${config.get('network.name')}/AcquisitionManager.address`).toString();
-  const artifact = await hre.artifacts.readArtifact('AcquisitionManagerImplementationV2');
+  const artifact = await hre.artifacts.readArtifact('AcquisitionManagerImplementation');
   console.log('deploying AcquisitionManagerImplementation');
   const upImplementation = await deploy.vanity({
     deployer,

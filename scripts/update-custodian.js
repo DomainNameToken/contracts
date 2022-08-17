@@ -18,7 +18,7 @@ async function main() {
   const admin = await deploy.admin({ owner, deployer });
 
   const upgradeableAddress = fs.readFileSync(`./deploys/${config.get('network.name')}/custodian.address`).toString();
-  const artifact = await hre.artifacts.readArtifact('CustodianImplementationV2');
+  const artifact = await hre.artifacts.readArtifact('CustodianImplementation');
   console.log('deploying Custodian Implementation');
   const upImplementation = await deploy.vanity({
     deployer,

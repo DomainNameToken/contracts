@@ -12,7 +12,7 @@ async function main(pgpPubKeyPath) {
 
   const [owner, operator] = await ethers.getSigners();
   const address = fs.readFileSync(`./deploys/${config.get('network.name')}/custodian.address`, 'utf8');
-  const artifact = await hre.artifacts.readArtifact('CustodianImplementationV2');
+  const artifact = await hre.artifacts.readArtifact('CustodianImplementation');
   const contract = new ethers.Contract(address, artifact.abi, owner);
   console.log(`setting custodian PGP public key on network ${config.get('network.name')}`);
   console.log(`pgpPubKey: ${pgpPubKey}`);

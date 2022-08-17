@@ -63,9 +63,9 @@ interface IDomain {
 
   function withdraw(uint256) external;
 
-  function adminTransferFrom(address,uint256) external;
+  function adminTransferFrom(address, uint256) external;
 
-  function adminChangeMintTime(uint256,uint256) external;
+  function adminChangeMintTime(uint256, uint256) external;
 
   function canWithdraw(uint256) external view returns (bool);
 }

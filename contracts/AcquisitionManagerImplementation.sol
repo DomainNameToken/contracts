@@ -15,7 +15,7 @@ import {Order} from "./libraries/Order.sol";
 
 /// @title AcquisitionManagerImplementation
 /// @notice Domain token acquisition manager contract. Order the minting or extension of a domain token
-contract AcquisitionManagerImplementationV2 is Destroyable, Initializable {
+contract AcquisitionManagerImplementation is Destroyable, Initializable {
   using OrderInfo for DataStructs.OrderInfo;
   using Order for DataStructs.Order;
   using Counters for Counters.Counter;

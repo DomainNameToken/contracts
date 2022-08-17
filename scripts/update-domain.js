@@ -18,7 +18,7 @@ async function main() {
   const admin = await deploy.admin({ owner, deployer });
 
   const upgradeableAddress = fs.readFileSync(`./deploys/${config.get('network.name')}/domain.address`).toString();
-  const artifact = await hre.artifacts.readArtifact('DomainImplementationV2');
+  const artifact = await hre.artifacts.readArtifact('DomainImplementation');
   console.log('deploying Domain Implementation');
   const upImplementation = await deploy.vanity({
     deployer,

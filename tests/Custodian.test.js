@@ -24,7 +24,7 @@ describe('Custodian', () => {
     [admin, ...otherAccounts] = allAccounts;
 
     UpgredeableContract = await ethers.getContractFactory('UpgradeableContract');
-    CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV2');
+    CustodianImplementation = await ethers.getContractFactory('CustodianImplementation');
 
     AdminProxy = await ethers.getContractFactory('AdminProxy');
     ExternalCallContract = await ethers.getContractFactory('ExternalTest');

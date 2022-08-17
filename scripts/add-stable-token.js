@@ -8,7 +8,7 @@ async function main() {
   console.log(`setting stable token on ${config.get('network.name')}`);
   const [owner, operator] = await ethers.getSigners();
   const acquisitionManagerAddress = fs.readFileSync(`./deploys/${config.get('network.name')}/AcquisitionManager.address`, 'utf8');
-  const artifact = await hre.artifacts.readArtifact('AcquisitionManagerImplementationV2');
+  const artifact = await hre.artifacts.readArtifact('AcquisitionManagerImplementation');
   const contract = new ethers.Contract(acquisitionManagerAddress, artifact.abi, owner);
 
   const tx = await contract.addStableToken(config.get('acquisitionManager.stableTokenAddress'));

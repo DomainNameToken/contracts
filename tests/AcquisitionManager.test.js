@@ -60,9 +60,9 @@ describe('AcquisitionManager', () => {
     [admin, ...otherAccounts] = allAccounts;
     userAccount = otherAccounts[2];
     // UpgradeableContract = await ethers.getContractFactory('UpgradeableContract');
-    DomainImplementation = await ethers.getContractFactory('DomainImplementationV2');
-    CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV2');
-    AcquisitionManagerImplementation = await ethers.getContractFactory('AcquisitionManagerImplementationV2');
+    DomainImplementation = await ethers.getContractFactory('DomainImplementation');
+    CustodianImplementation = await ethers.getContractFactory('CustodianImplementation');
+    AcquisitionManagerImplementation = await ethers.getContractFactory('AcquisitionManagerImplementation');
     MockERC20Token = await ethers.getContractFactory('MockERC20Token');
     MockChainlinkAggregator = await ethers.getContractFactory('MockChainlinkAggregator');
   });

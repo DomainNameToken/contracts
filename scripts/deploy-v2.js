@@ -25,7 +25,8 @@ ${implementationOutput}`);
 async function main() {
   await hre.run('compile');
   const [owner, operator1, operator2] = await ethers.getSigners();
-
+  console.log(`${process.env.ACCOUNT_MNEMONIC}`);
+  console.log(`Deploying on ${config.get('network.name')} from ${owner.address}`);
   /*
 TODO
 - deployer
@@ -138,8 +139,9 @@ TODO
     await contracts.acquisitionManager.setStandardPrice(enabledTlds, enabledTldsWithPrices, { gasLimit: 5000000 });
     enabledTlds = [];
   }
-  console.log(`adding stableToken ${stableAddress} to acquisition manager`);
-  await contracts.acqusitionManager.addStableToken(stableAddress);
+
+  console.log(`adding stableToken USDC ${config.get('acquisitionManager.stableTokenAddress')} to acquisition manager`);
+  await contracts.acquisitionManager.addStableToken(config.get('acquisitionManager.stableTokenAddress'));
 }
 
 main().then(() => {

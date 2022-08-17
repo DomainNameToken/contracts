@@ -10,7 +10,7 @@ library Order {
   /// @param order The order
   /// @return True if the order was initiated, false otherwise
   function isInitiated(DataStructs.Order storage order) internal view returns (bool) {
-    return uint256(order.status) == uint256(DataStructs.OrderStatus.INITIATED);
+    return order.status == DataStructs.OrderStatus.INITIATED;
   }
 
   /// @notice Check if the order status is open and not acknowledged by the custodian
@@ -62,7 +62,7 @@ library Order {
   /// @param order The order
   /// @return True if the order can be released from active order of a token, false otherwise
   function canRelease(DataStructs.Order storage order) internal view returns (bool) {
-    return !isInitiated(order) || isExpired(order);
+    return isExpired(order);
   }
 
   /// @notice Refund the amount of the order
@@ -85,7 +85,7 @@ library Order {
 
   /// @notice Release the payment amount of the order
   /// @param order The order
-  /// @param fundsDestiantion The destination of the funds
+  /// @param fundsDestination The destination of the funds
   /// @return True if the order payment amount was successfully released, false otherwise
   function takePayment(DataStructs.Order storage order, address fundsDestination)
     internal

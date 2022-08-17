@@ -60,9 +60,9 @@ describe('AcquisitionManager', () => {
     [admin, ...otherAccounts] = allAccounts;
     userAccount = otherAccounts[2];
     // UpgradeableContract = await ethers.getContractFactory('UpgradeableContract');
-    DomainImplementation = await ethers.getContractFactory('DomainImplementationV2');
-    CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV2');
-    AcquisitionManagerImplementation = await ethers.getContractFactory('AcquisitionManagerImplementationV2');
+    DomainImplementation = await ethers.getContractFactory('DomainImplementation');
+    CustodianImplementation = await ethers.getContractFactory('CustodianImplementation');
+    AcquisitionManagerImplementation = await ethers.getContractFactory('AcquisitionManagerImplementation');
     MockERC20Token = await ethers.getContractFactory('MockERC20Token');
     MockChainlinkAggregator = await ethers.getContractFactory('MockChainlinkAggregator');
   });
@@ -150,8 +150,9 @@ describe('AcquisitionManager', () => {
           orderInfo.data,
         );
     } else {
+      const balanceOfManagerBefore = await ethers.provider.getBalance(acquisitionManager.address);
       await expect(acquisitionManager.connect(customer)
-        .request(orderInfo, { value: orderInfo.paymentAmount }))
+        .request(orderInfo, { value: orderInfo.paymentAmount.mul(2) }))
         .to
         .emit(acquisitionManager, 'OrderOpen(uint256,uint256,address,uint256,uint256,string,string)')
         .withArgs(
@@ -163,6 +164,8 @@ describe('AcquisitionManager', () => {
           tld,
           orderInfo.data,
         );
+      const balanceOfManagerAfter = await ethers.provider.getBalance(acquisitionManager.address);
+      expect(balanceOfManagerAfter.sub(balanceOfManagerBefore)).to.equal(orderInfo.paymentAmount);
     }
     const expectedActiveOrderId = 1;
     expect(await acquisitionManager.book(orderInfo.tokenId)).to.equal(1);
@@ -231,18 +234,21 @@ describe('AcquisitionManager', () => {
       ),
     );
     const successSignature = await admin.signMessage(ethers.utils.arrayify(successHash));
-
+    const balanceBeforeSuccess = await mockERC20Token.balanceOf(allAccounts[0].address);
     await expect(acquisitionManager.success(1, successData, successSignature, signatureNonceGroup, signatureNonce))
       .to
       .emit(acquisitionManager, 'OrderSuccess(uint256)')
       .withArgs(1);
     order = await acquisitionManager.orders(1);
     expect(order.status).to.equal(3); // expect status == SUCCESS
-
+    const balanceAfterSuccess = await mockERC20Token.balanceOf(allAccounts[0].address);
+    expect(balanceAfterSuccess.sub(balanceBeforeSuccess)).to.equal(orderInfo.paymentAmount);
     const domainInfo = await domainImplementation.getDomainInfo(orderInfo.tokenId);
     expect(domainInfo.name).to.equal(testDomainName);
     const ownerOfDomain = await domainImplementation.ownerOf(orderInfo.tokenId);
     expect(ownerOfDomain).to.equal(allAccounts[2].address);
+    const totalSupply = await domainImplementation.totalSupply();
+    expect(totalSupply).to.equal(1);
   });
 
   it('should correctly mark order as FAILED', async () => {

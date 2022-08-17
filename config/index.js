@@ -55,7 +55,8 @@ const config = convict({
     },
     accounts: {
       format: 'accounts-from-mnemonic',
-      default: 'ride move coyote bird bulb rate rally library goat height artefact lion',
+      // do not use this mnemonic anywhere
+      default: 'ride move coyote bird bulb rate rally library goat height artefact lion', 
       env: 'ACCOUNT_MNEMONIC',
     },
     providerHttpHardhat: {

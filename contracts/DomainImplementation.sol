@@ -18,8 +18,7 @@ import {IDomain} from "./interfaces/IDomain.sol";
 
 /// @title Domain Token implementation
 /// @notice Domain Token implementation
-/// @inheritdoc IDomain
-contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initializable {
+contract DomainImplementation is ERC721Enumerable, Destroyable, IDomain, Initializable {
   using Domain for DataStructs.Domain;
   ICustodian public custodian;
   mapping(uint256 => DataStructs.Domain) public domains;
@@ -27,6 +26,9 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
   string private _symbol;
   string private NAME_SEPARATOR = " ";
   string private SYMBOL_SEPARATOR = "-";
+
+  mapping(uint256 => uint256) public mintingTimestamp;
+  uint256 public withdrawLockWindow = 90 * 24 * 3600; // 90 days
 
   modifier onlyCustodian() {
     require(msg.sender == address(custodian) || custodian.isOperator(msg.sender), "only custodian");
@@ -103,6 +105,10 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     return _exists(tokenId);
   }
 
+  function setWithdrawLockWindow(uint256 _withdrawLockWindow) external onlyOwner {
+    withdrawLockWindow = _withdrawLockWindow;
+  }
+
   /// @notice Set new expiration time for a domain
   /// @dev can be called only by custodian
   /// @dev emits DomainExtended event on success
@@ -147,6 +153,7 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
 
     _mint(info.owner, info.tokenId);
     emit DomainMinted(info.tokenId, info.owner, info.expiry, domains[info.tokenId].name);
+
     return info.tokenId;
   }
 
@@ -161,6 +168,8 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     emit DomainBurned(info.tokenId, domains[info.tokenId].expiry, domains[info.tokenId].name);
 
     delete domains[info.tokenId];
+    delete mintingTimestamp[info.tokenId];
+
     _burn(info.tokenId);
   }
 
@@ -168,26 +177,63 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
     address from,
     address to,
     uint256 tokenId
-  ) internal view override {
+  ) internal override {
+    super._beforeTokenTransfer(from, to, tokenId);
     /// @dev a domain token can not be transferred if it is locked, frozen or expired
     if (to != address(0) && from != address(0) && !custodian.isOperator(msg.sender)) {
       require(domains[tokenId].isNotLocked(), "Domain is locked");
       require(domains[tokenId].isNotFrozen(), "Domain is frozen");
       require(domains[tokenId].isNotExpired(), "Domain is expired");
     }
+    // set timestamp of domain token minting
+    if (from == address(0)) {
+      mintingTimestamp[tokenId] = block.timestamp;
+    }
+  }
+  /// @notice Custodian can force transfer any domain token to any other address due to disputes or other reasons
+  /// @dev can be called only by custodian
+  /// @param to The destination address
+  /// @param tokenId The tokenId to transfer
+  function adminTransferFrom(address to, uint256 tokenId) external override onlyCustodian {
+    require(_exists(tokenId), "Token does not exist");
+    _transfer(ownerOf(tokenId), to, tokenId);
   }
 
+  /// @notice Custodian can change minting timestamp of a domain token
+  /// @dev can be called only by custodian
+  /// @param tokenId The tokenId to change the minting timestamp
+  /// @param newMintTime The new minting timestamp
+  function adminChangeMintTime(uint256 tokenId, uint256 newMintTime) external override onlyCustodian {
+    require(_exists(tokenId), "Token does not exist");
+    mintingTimestamp[tokenId] = newMintTime;
+  }
+
+  /// @notice Owner of a token can set Lock status. While locked a domain can not be transferred to another address.
+  /// @dev can be called only by owner of the token. Emits DomainLocked event on success
+  /// @param tokenId The tokenId to set the lock status
+  /// @param status True if the domain is locked, false otherwise
   function setLock(uint256 tokenId, bool status) external override {
     require(_exists(tokenId), "token does not exist");
-    require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
+    require(ownerOf(tokenId) == msg.sender, "not owner of domain");
     domains[tokenId].setLock(status);
     emit DomainLock(tokenId, domains[tokenId].locked);
   }
 
+  /// @notice Set freeze status of a domain token. While frozen a domain can not be transferred to another address.
+  /// @dev Can only be called by custodian. Emits DomainFreez event on success
+  /// @param tokenId The tokenId to set the freeze status
+  /// @param status True if the domain is frozen, false otherwise
   function setFreeze(uint256 tokenId, bool status) external override onlyCustodian {
     require(_exists(tokenId), "Domain does not exist");
     domains[tokenId].setFreeze(status);
     emit DomainFreeze(tokenId, domains[tokenId].frozen);
+  }
+  /// @notice Check if a withdraw request can be issued
+  /// @param tokenId The tokenId to check
+  /// @return True if the withdraw request can be issued, false otherwise
+  function canWithdraw(uint256 tokenId) public view override returns (bool) {
+    require(_exists(tokenId), "Domain does not exist");
+    return block.timestamp >= mintingTimestamp[tokenId] + withdrawLockWindow;
   }
 
   /// @notice Request to withdraw the token from custodian.
@@ -198,6 +244,7 @@ contract DomainImplementationV2 is ERC721Enumerable, Destroyable, IDomain, Initi
   function withdraw(uint256 tokenId) external override {
     require(_exists(tokenId), "Domain does no exist");
     require(_isApprovedOrOwner(msg.sender, tokenId), "not owner of domain");
+    require(canWithdraw(tokenId), "Domain can not be withdrawn");
     require(domains[tokenId].isNotLocked(), "Domain is locked");
     require(domains[tokenId].isNotFrozen(), "Domain is frozen");
     require(domains[tokenId].isNotExpired(), "Domain is expired");

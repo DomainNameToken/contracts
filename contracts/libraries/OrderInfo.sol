@@ -12,12 +12,12 @@ library OrderInfo {
   using EnumerableMap for EnumerableMap.AddressToUintMap;
 
   /// @notice Checks if the order information is valid
-  /// @param orderInfo Order information
+  /// @param info Order information
   /// @param domainToken Address of domain token contract
   /// @param custodian Address of custodian contract
   /// @param acceptedStableTokens List of all accepted stable tokens
   /// @param withTokenCheck When true, checks if info.paymentToken is in acceptedStableTokens
-  /// @returns True if the order information is valid, false otherwise
+  /// @return True if the order information is valid, false otherwise
   function isValidRequest(
     DataStructs.OrderInfo memory info,
     address domainToken,
@@ -25,11 +25,11 @@ library OrderInfo {
     EnumerableMap.AddressToUintMap storage acceptedStableTokens,
     bool withTokenCheck
   ) internal view returns (bool) {
-    /// @dev can not accept an order for a non set token id
+    // can not accept an order for a non set token id
     if (info.tokenId == 0) {
       return false;
     }
-    /// @dev The type of the order should be one of REGISTER / IMPORT / EXTEND
+    // The type of the order should be one of REGISTER / IMPORT / EXTEND
     if (
       info.orderType != DataStructs.OrderType.REGISTER &&
       info.orderType != DataStructs.OrderType.IMPORT &&
@@ -37,8 +37,8 @@ library OrderInfo {
     ) {
       return false;
     }
-    /// @dev When the order type is REGISTER check if the token was not previously minted
-    /// @dev Minimum numberOfYears should not be zero
+    // When the order type is REGISTER check if the token was not previously minted
+    // Minimum numberOfYears should not be zero
     if (info.orderType == DataStructs.OrderType.REGISTER) {
       if (IDomain(domainToken).exists(info.tokenId)) {
         return false;
@@ -47,8 +47,8 @@ library OrderInfo {
         return false;
       }
     }
-    /// @dev When the order type is IMPORT check if the token was not previously minted
-    /// @dev The number of years has to be 1
+    // When the order type is IMPORT check if the token was not previously minted
+    // The number of years has to be 1
     if (info.orderType == DataStructs.OrderType.IMPORT) {
       if (IDomain(domainToken).exists(info.tokenId)) {
         return false;
@@ -58,8 +58,8 @@ library OrderInfo {
       }
     }
 
-    /// @dev When the order type is EXTEND check if the token was previously minted
-    /// @dev The number of years must not be zero
+    // When the order type is EXTEND check if the token was previously minted
+    // The number of years must not be zero
     if (info.orderType == DataStructs.OrderType.EXTEND) {
       if (!IDomain(domainToken).exists(info.tokenId)) {
         return false;
@@ -68,7 +68,7 @@ library OrderInfo {
         return false;
       }
     }
-    /// @dev If requested, check if the paymentToken is in acceptedStableTokens
+    // If requested, check if the paymentToken is in acceptedStableTokens
     if (withTokenCheck) {
       if (info.paymentToken != address(0)) {
         if (!acceptedStableTokens.contains(info.paymentToken)) {
@@ -77,12 +77,12 @@ library OrderInfo {
       }
     }
 
-    /// @dev Check if the provided tld is enabled with custodian
+    // Check if the provided tld is enabled with custodian
     if (!ICustodian(custodian).isTldEnabled(info.tld)) {
       return false;
     }
 
-    /// @dev order data should not be empty
+    // order data should not be empty
     if (bytes(info.data).length == 0) {
       return false;
     }
@@ -90,12 +90,12 @@ library OrderInfo {
   }
 
   /// @notice Encode and hash the order information
-  /// @param orderInfo Order information
+  /// @param info Order information
   /// @param customer The customer address
   /// @param paymentAmount The payment amount
   /// @param validUntil The valid until timestamp
   /// @param nonce The nonce
-  /// @returns The keccak256 hash of the abi encoded order information
+  /// @return The keccak256 hash of the abi encoded order information
   function encodeHash(
     DataStructs.OrderInfo memory info,
     address customer,
@@ -123,9 +123,9 @@ library OrderInfo {
   /// @notice Check if payment for order info is provided
   /// @dev When paymentToken is set to address(0) check if msg.value is greater than requiredAmount
   /// @dev When paymentToken is not address(0) check if balance of msg.sender is greater than requiredAmount and the allowance of acquisitionManager contract address is greater than requiredAmount
-  /// @param orderInfo Order information
+  /// @param info Order information
   /// @param requiredAmount The required payment amount
-  /// @returns True if the payment amount is provided, false otherwise
+  /// @return True if the payment amount is provided, false otherwise
   function hasPayment(DataStructs.OrderInfo memory info, uint256 requiredAmount)
     internal
     view
@@ -142,9 +142,9 @@ library OrderInfo {
 
   /// @notice Lock the payment amount for the order info
   /// @dev When paymentToken is not address(0) transfer from msg.sender to acquisitionManager contract address the requiredAmount
-  /// @param orderInfo Order information
+  /// @param info Order information
   /// @param requiredAmount The required payment amount
-  /// @returns True if the payment amount was successfully locked, false otherwise
+  /// @return True if the payment amount was successfully locked, false otherwise
   function lockPayment(DataStructs.OrderInfo memory info, uint256 requiredAmount)
     internal
     returns (bool)
@@ -153,6 +153,10 @@ library OrderInfo {
       return true;
     }
     if (info.paymentToken == address(0)) {
+      // send back any surplus amount
+      if (requiredAmount < msg.value) {
+        payable(msg.sender).transfer(msg.value - requiredAmount);
+      }
       return true;
     } else {
       uint256 balanceBefore = IERC20(info.paymentToken).balanceOf(address(this));

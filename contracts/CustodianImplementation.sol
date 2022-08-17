@@ -10,34 +10,23 @@ import {BytesDecoder} from "./libraries/BytesDecoder.sol";
 
 /// @title Custodian Implementation
 /// @notice This contract is used to identify operators and manage domain tokens
-contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
+contract CustodianImplementation is ICustodian, Destroyable, Initializable {
   using CustodianLib for CustodianLib.Custodian;
   using BytesDecoder for bytes;
   using EnumerableMap for EnumerableMap.Bytes32ToBytes32Map;
   CustodianLib.Custodian private custodian;
 
-  /**
-     @notice Current expected minimum nonce for each group
-   */
-
+  // Current expected minimum nonce for each group
   mapping(bytes32 => uint256) _nonces;
 
-  /**
-     @notice enabled tlds list
-   */
-
+  // enabled tlds list
   EnumerableMap.Bytes32ToBytes32Map private enabledTlds;
 
-  /**
-     @notice Index of bytes32 keccak256(encode.abi(tldString)) to tldString
-     @dev Index of bytes32 keccak256(encode.abi(tldString)) to tldString
-  */
+  // Index of bytes32 keccak256(encode.abi(tldString)) to tldString
   mapping(bytes32 => string) public tlds;
 
-  /**
-     @notice Custodian PGP Public Key
-     @dev This is the PGP public key of the custodian. It should be used to encrypt all orders data.
-   */
+  // Custodian PGP Public Key
+  // This is the PGP public key of the custodian. It should be used to encrypt all orders data.
   string public pgpPublicKey;
 
   constructor() {}
@@ -100,7 +89,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   /**
      @notice Adds a new operator to the custodian.
      @dev Adds a new operator to the custodian.
-     @param _operator The new operator address.
+     @param operator The new operator address.
    */
   function addOperator(address operator) external override onlyOwner {
     custodian.addOperator(operator);
@@ -110,7 +99,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   /**
      @notice Removes an operator from the custodian.
      @dev Removes an operator from the custodian.
-     @param _operator The operator address.
+     @param operator The operator address.
   */
   function removeOperator(address operator) external override onlyOwner {
     custodian.removeOperator(operator);
@@ -129,7 +118,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   /**
      @notice Checks if an operator is an operator of the custodian.
      @dev Checks if an operator is an operator of the custodian.
-     @param _operator The operator address.
+     @param operator The operator address.
      @return True if the operator is an operator of the custodian, false otherwise.
   */
   function isOperator(address operator) external view override returns (bool) {
@@ -155,7 +144,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   /**
     @notice Get the current nonce for provided group
     @dev Get the current nonce for provided group.
-    @param _group The group.
+    @param group The group.
     @return The current nonce for provided group.
    */
   function _nonce(bytes32 group) external view override returns (uint256) {
@@ -220,13 +209,14 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
     if (!success) {
       revert(response.extractRevertReason());
     }
+    _nonces[signatureNonceGroup] = signatureNonce;
     return response;
   }
 
   /**
    @notice Enables a list of tlds. Can be called only by operators
    @dev Enables a list of tlds.
-   @param _tlds The list of tlds.
+   @param tlds_ The list of tlds.
   */
   function enableTlds(string[] memory tlds_) external override onlyOperator {
     for (uint256 i = 0; i < tlds_.length; i++) {
@@ -243,7 +233,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   /**
      @notice Disables a list of tlds. Can be called only by operators
      @dev Disables a list of tlds.
-     @param _tlds The list of tlds.
+     @param tlds_ The list of tlds.
   */
   function disableTlds(string[] memory tlds_) external override onlyOperator {
     for (uint256 i = 0; i < tlds_.length; i++) {
@@ -257,7 +247,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   /**
      @notice Check if a tld is enabled.
      @dev Check if a tld is enabled.
-     @param _tld The tld.
+     @param tld The tld.
      @return True if the tld is enabled, false otherwise.
    */
   function isTldEnabled(string memory tld) external view override returns (bool) {
@@ -268,7 +258,7 @@ contract CustodianImplementationV2 is ICustodian, Destroyable, Initializable {
   /**
      @notice Check if a tld is enabled.
      @dev Check if a tld is enabled.
-     @param _tld The encoded tld.
+     @param tldKey The encoded tld.
      @return True if the tld is enabled, false otherwise.
    */
   function isTldEnabled(bytes32 tldKey) external view override returns (bool) {

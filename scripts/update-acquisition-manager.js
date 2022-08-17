@@ -17,27 +17,25 @@ async function main() {
   console.log('Deploying admin');
   const admin = await deploy.admin({ owner, deployer });
 
-  const upgradeableAddress = fs.readFileSync(`./deploys/${config.get('network.name')}/domain.address`).toString();
-  const artifact = await hre.artifacts.readArtifact('DomainImplementation');
-  console.log('deploying Domain Implementation');
+  const upgradeableAddress = fs.readFileSync(`./deploys/${config.get('network.name')}/AcquisitionManager.address`).toString();
+  const artifact = await hre.artifacts.readArtifact('AcquisitionManagerImplementation');
+  console.log('deploying AcquisitionManagerImplementation');
   const upImplementation = await deploy.vanity({
     deployer,
     owner,
-    specificSalt: ethers.utils.id(`dnt-domain-${version}`),
+    specificSalt: ethers.utils.id(`dnt-acquisition-manager-${version}`),
     artifact,
     constructorBytes: undefined,
   });
-  console.log(`Deployed Domain Implementation at ${upImplementation.address}`);
+  console.log(`Deployed AcquisitionManagerImplementation at ${upImplementation.address}`);
   fs.writeFileSync(
-    `./deploys/${config.get('network.name')}/domain.implementation-${version}.address`,
+    `./deploys/${config.get('network.name')}/acquisition-manager.implementation-${version}.address`,
     `${upImplementation.address}`,
   );
   const tx = await admin.contract.upgrade(
     upgradeableAddress,
     upImplementation.address,
-    {
-      gasLimit: 5000000,
-    },
+    { gasLimit: 5000000 },
   );
   console.log(`upgrade tx: ${tx.hash}`);
   await tx.wait();

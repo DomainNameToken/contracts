@@ -45,8 +45,8 @@ describe('Domain', () => {
     [admin, ...otherAccounts] = allAccounts;
     userAccount = otherAccounts[0];
     UpgradeableContract = await ethers.getContractFactory('UpgradeableContract');
-    DomainImplementation = await ethers.getContractFactory('DomainImplementationV2');
-    CustodianImplementation = await ethers.getContractFactory('CustodianImplementationV2');
+    DomainImplementation = await ethers.getContractFactory('DomainImplementation');
+    CustodianImplementation = await ethers.getContractFactory('CustodianImplementation');
 
     AdminProxy = await ethers.getContractFactory('AdminProxy');
   });
@@ -125,6 +125,8 @@ describe('Domain', () => {
     const exists = await domainGateway.exists(mintInfo.tokenId);
     expect(exists).to.equal(true);
     expect(await domainGateway.balanceOf(otherAccounts[0].address)).to.equal(1);
+    expect(await domainGateway.tokenOfOwnerByIndex(otherAccounts[0].address, 0)).to.equal(mintInfo.tokenId);
+    expect(await domainGateway.totalSupply()).to.equal(1);
   });
 
   it('should correctly burn', async () => {

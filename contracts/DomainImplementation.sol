@@ -66,7 +66,7 @@ contract DomainImplementation is ERC721Enumerable, Destroyable, IDomain, Initial
     string memory symbol_,
     string memory nameSeparator_,
     string memory symbolSeparator_
-  ) public onlyOwner {
+  ) public onlyCustodian {
     _name = name_;
     _symbol = symbol_;
     NAME_SEPARATOR = nameSeparator_;
@@ -90,7 +90,7 @@ contract DomainImplementation is ERC721Enumerable, Destroyable, IDomain, Initial
   /// @notice Set custodian contract address
   /// @dev can be called only by contract owner
   /// @param _custodian The address of the custodian contract
-  function setCustodian(address _custodian) external override onlyOwner {
+  function setCustodian(address _custodian) external override onlyCustodian {
     custodian = ICustodian(_custodian);
   }
 
@@ -105,7 +105,7 @@ contract DomainImplementation is ERC721Enumerable, Destroyable, IDomain, Initial
     return _exists(tokenId);
   }
 
-  function setWithdrawLockWindow(uint256 _withdrawLockWindow) external onlyOwner {
+  function setWithdrawLockWindow(uint256 _withdrawLockWindow) external onlyCustodian {
     withdrawLockWindow = _withdrawLockWindow;
   }
 

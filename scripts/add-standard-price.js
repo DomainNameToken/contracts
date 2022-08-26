@@ -2,9 +2,10 @@ const hre = require('hardhat');
 const fs = require('fs');
 
 const { ethers } = hre;
-const tlds = require('../data/tlds');
+const tlds = require('../data/tlds-am');
 const config = require('../config');
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function main() {
   const [owner] = await ethers.getSigners();
 
@@ -18,9 +19,12 @@ async function main() {
 
   let enabledTlds = [];
   let enabledTldsWithPrices = [];
+  let tx;
+  let nonce = await ethers.provider.getTransactionCount(owner.address);
+  console.log(`starting nonce ${nonce}`);
   for (let i = 0; i < tlds.length; i++) {
     enabledTlds.push(tlds[i].tld);
-    tlds[i].price = Math.ceil((tlds[i].price + 8) * 100) / 100;
+    tlds[i].price = Math.ceil((tlds[i].price) * 100) / 100;
 
     enabledTldsWithPrices.push(ethers.utils.parseUnits(
       `${tlds[i].price}`,
@@ -28,18 +32,51 @@ async function main() {
     ));
     if (enabledTlds.length > 10) {
       console.log(`enabling ${enabledTlds.join(',')} tlds on custodian`);
-      await contracts.custodian.enableTlds(enabledTlds, { gasLimit: 5000000 });
+      console.log(`using nonce ${nonce}`);
+      tx = await contracts.custodian.enableTlds(enabledTlds, {
+        gasLimit: 5000000,
+        nonce,
+        gasPrice: ethers.utils.parseUnits('250', 'gwei'),
+      });
+      console.log(`enabling ${enabledTlds.join(',')} tlds ${tx.hash}`);
+      await tx.wait();
+
+      nonce++;
+      await sleep(1000);
       console.log(`adding standard prices for ${enabledTlds.join(',')} tlds on acquisition manager`);
-      await contracts.acquisitionManager.setStandardPrice(enabledTlds, enabledTldsWithPrices, { gasLimit: 5000000 });
+      console.log(`using nonce ${nonce}`);
+      tx = await contracts.acquisitionManager.setStandardPrice(enabledTlds, enabledTldsWithPrices, {
+        gasLimit: 5000000,
+        gasPrice: ethers.utils.parseUnits('250', 'gwei'),
+        nonce,
+      });
+      nonce++;
+      console.log(`adding standard prices for ${enabledTlds.join(',')} tlds with prices ${enabledTldsWithPrices.join(' , ')}
+       ${tx.hash}`);
+      await tx.wait();
       enabledTlds = [];
       enabledTldsWithPrices = [];
+      await sleep(1000);
     }
   }
   if (enabledTlds.length > 0) {
+    console.log(`using nonce ${nonce}`);
     console.log(`enabling ${enabledTlds.join(',')} tlds on custodian`);
-    await contracts.custodian.enableTlds(enabledTlds, { gasLimit: 5000000 });
+    tx = await contracts.custodian.enableTlds(enabledTlds, {
+      gasLimit: 5000000,
+      nonce,
+      gasPrice: ethers.utils.parseUnits('250', 'gwei'),
+    });
+    console.log(`enabling ${enabledTlds.join(',')} tlds ${tx.hash}`);
+    await tx.wait();
+    nonce++;
+    await sleep(1000);
     console.log(`adding standard prices for ${enabledTlds.join(',')} tlds on acquisition manager`);
-    await contracts.acquisitionManager.setStandardPrice(enabledTlds, enabledTldsWithPrices, { gasLimit: 5000000 });
+    console.log(`using nonce ${nonce}`);
+    tx = await contracts.acquisitionManager.setStandardPrice(enabledTlds, enabledTldsWithPrices, { gasLimit: 5000000, gasPrice: ethers.utils.parseUnits('250', 'gwei'), nonce });
+    console.log(`adding standard prices for ${enabledTlds.join(',')} tlds with prices ${enabledTldsWithPrices.join(' , ')}
+ ${tx.hash}`);
+    await tx.wait();
     enabledTlds = [];
   }
 }

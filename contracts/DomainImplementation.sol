@@ -66,7 +66,7 @@ contract DomainImplementation is ERC721Enumerable, Destroyable, IDomain, Initial
     string memory symbol_,
     string memory nameSeparator_,
     string memory symbolSeparator_
-  ) public onlyOwner {
+  ) public onlyCustodian {
     _name = name_;
     _symbol = symbol_;
     NAME_SEPARATOR = nameSeparator_;
@@ -90,7 +90,7 @@ contract DomainImplementation is ERC721Enumerable, Destroyable, IDomain, Initial
   /// @notice Set custodian contract address
   /// @dev can be called only by contract owner
   /// @param _custodian The address of the custodian contract
-  function setCustodian(address _custodian) external override onlyOwner {
+  function setCustodian(address _custodian) external override onlyCustodian {
     custodian = ICustodian(_custodian);
   }
 
@@ -105,7 +105,7 @@ contract DomainImplementation is ERC721Enumerable, Destroyable, IDomain, Initial
     return _exists(tokenId);
   }
 
-  function setWithdrawLockWindow(uint256 _withdrawLockWindow) external onlyOwner {
+  function setWithdrawLockWindow(uint256 _withdrawLockWindow) external onlyCustodian {
     withdrawLockWindow = _withdrawLockWindow;
   }
 
@@ -190,6 +190,7 @@ contract DomainImplementation is ERC721Enumerable, Destroyable, IDomain, Initial
       mintingTimestamp[tokenId] = block.timestamp;
     }
   }
+
   /// @notice Custodian can force transfer any domain token to any other address due to disputes or other reasons
   /// @dev can be called only by custodian
   /// @param to The destination address
@@ -203,7 +204,11 @@ contract DomainImplementation is ERC721Enumerable, Destroyable, IDomain, Initial
   /// @dev can be called only by custodian
   /// @param tokenId The tokenId to change the minting timestamp
   /// @param newMintTime The new minting timestamp
-  function adminChangeMintTime(uint256 tokenId, uint256 newMintTime) external override onlyCustodian {
+  function adminChangeMintTime(uint256 tokenId, uint256 newMintTime)
+    external
+    override
+    onlyCustodian
+  {
     require(_exists(tokenId), "Token does not exist");
     mintingTimestamp[tokenId] = newMintTime;
   }
@@ -228,6 +233,7 @@ contract DomainImplementation is ERC721Enumerable, Destroyable, IDomain, Initial
     domains[tokenId].setFreeze(status);
     emit DomainFreeze(tokenId, domains[tokenId].frozen);
   }
+
   /// @notice Check if a withdraw request can be issued
   /// @param tokenId The tokenId to check
   /// @return True if the withdraw request can be issued, false otherwise

@@ -1,4 +1,5 @@
-require('dotenv').config();
+require('dotenv').config({ override: true });
+
 const convict = require('convict');
 const fs = require('fs');
 const path = require('path');
@@ -56,7 +57,7 @@ const config = convict({
     accounts: {
       format: 'accounts-from-mnemonic',
       // do not use this mnemonic anywhere
-      default: 'ride move coyote bird bulb rate rally library goat height artefact lion', 
+      default: 'ride move coyote bird bulb rate rally library goat height artefact lion',
       env: 'ACCOUNT_MNEMONIC',
     },
     providerHttpHardhat: {
